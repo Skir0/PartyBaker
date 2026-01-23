@@ -83,7 +83,7 @@ fun onInternalMessage(in: InMessage) {
             assert (giftStorage.status == GiftStatus.CANCELLED) throw ERROR_NOT_CANCELLED_GIFT;
 
             val amountToReturn = giftStorage.contributors.get(in.senderAddress);
-            assert (amountToReturn != null) throw ERROR_GUEST_NOT_EXIST;
+            assert (amountToReturn != null) throw ERROR_CONTRIBUTOR_NOT_EXIST;
 
             giftStorage.contributors.delete(in.senderAddress);
             giftStorage.collectedAmount -= amountToReturn!;
@@ -137,7 +137,6 @@ struct GiftWalletDataReply {
 
 get fun get_wallet_data(): GiftWalletDataReply {
     var giftStorage = lazy GiftStorage.load();
-
     return {
         targetAmount: giftStorage.targetAmount,
         collectedAmount: giftStorage.collectedAmount,
@@ -153,3 +152,11 @@ get fun get_status(): int {
     return giftStorage.status;
 }
 
+get fun get_collected_amount(): int {
+    var giftStorage = lazy GiftStorage.load();
+    return giftStorage.collectedAmount;
+}
+get fun get_admin_address(): int {
+    var giftStorage = lazy GiftStorage.load();
+    return giftStorage.adminAddress;
+}

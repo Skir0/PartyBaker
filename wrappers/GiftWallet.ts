@@ -9,6 +9,7 @@ import {
     Sender,
     SendMode
 } from '@ton/core';
+import { Treasury } from '@ton/sandbox';
 
 export type GiftWalletConfig = {
     targetAmount: bigint;
@@ -66,6 +67,15 @@ export class GiftWallet implements Contract {
         const init = { data, code };
         return new GiftWallet(contractAddress(workchain, init), init);
     }
+
+    async sendDeploy(provider: ContractProvider, via: Sender, value: bigint) {
+        await provider.internal(via, {
+            value,
+            sendMode: SendMode.PAY_GAS_SEPARATELY,
+            body: beginCell().endCell(),
+        });
+    }
+
     async getData(provider: ContractProvider) {
         const { stack } = await provider.get('get_wallet_data', []);
         return {

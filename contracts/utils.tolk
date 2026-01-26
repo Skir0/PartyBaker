@@ -23,3 +23,7 @@ fun calcDeployedJettonWallet(ownerAddress: address, minterAddress: address, wall
         }
     };
 }
+fun calcAddressOfJettonWallet(ownerAddress: address, minterAddress: address, jettonWalletCode: cell) {
+    val jwDeployed = calcDeployedJettonWallet(ownerAddress, minterAddress, jettonWalletCode);
+    return jwDeployed.calculateAddress()
+}

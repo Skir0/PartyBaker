@@ -1,3 +1,4 @@
+
 struct (0xf8a7ea5) AskToTransfer  {
     queryId: uint64
     amount: coins
@@ -5,14 +6,14 @@ struct (0xf8a7ea5) AskToTransfer  {
     responseDestination: address?
     customPayload: cell?
     forwardTonAmount: coins
-    forwardPayload: slice
+    forwardPayload: RemainingBitsAndRefs
 }
 
 struct (0x7362d09c) TransferNotification {
     queryId: uint64
     amount: coins
     senderAddress: address?
-    forwardPayload: slice
+    forwardPayload: RemainingBitsAndRefs
 }
 
 struct (0x100) CancelGift {

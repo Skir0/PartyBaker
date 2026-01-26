@@ -1,7 +1,5 @@
 import "@stdlib/gas-payments"
 import "errors"
-import "jetton-utils"
-import "fees-management"
 import "storage"
 import "messages"
 import "utils"
@@ -9,6 +7,11 @@ import "utils"
 type AllowedInternalMessage =  TransferNotification | CancelGift | ReturnAmount | ChangeAdmin;
 
 fun onInternalMessage(in: InMessage) {
+
+    // deploy
+    if (in.body.isEmpty()) {
+        return;
+    }
 
     val msg = lazy AllowedInternalMessage.fromSlice(in.body);
 
@@ -18,7 +21,7 @@ fun onInternalMessage(in: InMessage) {
         TransferNotification => {
             var giftStorage = GiftStorage.load();
 
-            val giftJettonWalletAddress = calcDeployedJettonWallet(
+            val giftJettonWalletAddress = calcAddressOfJettonWallet(
                 contract.getAddress(),
                 giftStorage.acceptedMinterAddress,
                 giftStorage.code
@@ -29,10 +32,9 @@ fun onInternalMessage(in: InMessage) {
             assert (giftStorage.status == GiftStatus.ACTIVE) throw ERROR_NOT_ACTIVE_GIFT;
 
             var oldAmount = giftStorage.contributors.get(msg.senderAddress!!);
-            if (oldAmount == null) {
-                oldAmount = 0;
-            }
-            giftStorage.contributors.set(msg.senderAddress!!, oldAmount! + msg.amount);
+            var temp: coins = oldAmount.isFound ? oldAmount.loadValue() : 0;
+
+            giftStorage.contributors.set(msg.senderAddress!!, temp + msg.amount);
 
             giftStorage.collectedAmount += msg.amount;
 
@@ -83,10 +85,10 @@ fun onInternalMessage(in: InMessage) {
             assert (giftStorage.status == GiftStatus.CANCELLED) throw ERROR_NOT_CANCELLED_GIFT;
 
             val amountToReturn = giftStorage.contributors.get(in.senderAddress);
-            assert (amountToReturn != null) throw ERROR_CONTRIBUTOR_NOT_EXIST;
+            assert (amountToReturn.isFound) throw ERROR_CONTRIBUTOR_NOT_EXIST;
 
             giftStorage.contributors.delete(in.senderAddress);
-            giftStorage.collectedAmount -= amountToReturn!;
+            giftStorage.collectedAmount -= amountToReturn.loadValue();
 
             val askToTransfer = createMessage({
                 bounce: BounceMode.NoBounce,
@@ -94,7 +96,7 @@ fun onInternalMessage(in: InMessage) {
                 value: 0,
                 body: AskToTransfer {
                     queryId: msg.queryId,
-                    amount: amountToReturn!,
+                    amount: amountToReturn.loadValue(),
                     destination: in.senderAddress,
                     responseDestination: in.senderAddress,
                     customPayload: null,
@@ -117,7 +119,6 @@ fun onInternalMessage(in: InMessage) {
                 bounce: BounceMode.NoBounce,
                 dest: msg.newAdminAddress,
                 value: 0,
-                body: null
             });
             reply.send(SEND_MODE_CARRY_ALL_REMAINING_MESSAGE_VALUE);
 
@@ -147,16 +148,16 @@ get fun get_wallet_data(): GiftWalletDataReply {
     }
 }
 
-get fun get_status(): int {
+get fun get_status(): GiftStatus {
     var giftStorage = lazy GiftStorage.load();
     return giftStorage.status;
 }
 
-get fun get_collected_amount(): int {
+get fun get_collected_amount(): coins {
     var giftStorage = lazy GiftStorage.load();
     return giftStorage.collectedAmount;
 }
-get fun get_admin_address(): int {
+get fun get_admin_address(): address {
     var giftStorage = lazy GiftStorage.load();
     return giftStorage.adminAddress;
 }

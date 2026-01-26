@@ -4,7 +4,11 @@ import "storage"
 import "messages"
 import "utils"
 
-type AllowedInternalMessage =  TransferNotification | CancelGift | ReturnAmount | ChangeAdmin;
+type AllowedInternalMessage =  TransferNotification
+                                | CancelGift
+                                | ReturnAmount
+                                | ChangeAdmin
+                                | ChangeTargetAmount;
 
 fun onInternalMessage(in: InMessage) {
 
@@ -33,7 +37,6 @@ fun onInternalMessage(in: InMessage) {
 
             var oldAmount = giftStorage.contributors.get(msg.senderAddress!!);
             var temp: coins = oldAmount.isFound ? oldAmount.loadValue() : 0;
-
             giftStorage.contributors.set(msg.senderAddress!!, temp + msg.amount);
 
             giftStorage.collectedAmount += msg.amount;
@@ -51,7 +54,10 @@ fun onInternalMessage(in: InMessage) {
                         responseDestination: giftStorage.adminAddress,
                         customPayload: null,
                         forwardTonAmount: ton("0.01"),
-                        forwardPayload: beginCell().storeSlice("Collect total sum for gift, send money to buyer").endCell().beginParse()
+                        forwardPayload: beginCell()
+                            .storeUint(0, 32)
+                            .storeSlice("Collect total sum for gift, send money to buyer")
+                            .endCell()
                     }
                 });
                 askToTransfer.send(SEND_MODE_CARRY_ALL_REMAINING_MESSAGE_VALUE);
@@ -101,10 +107,13 @@ fun onInternalMessage(in: InMessage) {
                     responseDestination: in.senderAddress,
                     customPayload: null,
                     forwardTonAmount: ton("0.01"),
-                    forwardPayload: beginCell().storeSlice("Return").endCell().beginParse()
+                    forwardPayload: beginCell()
+                        .storeSlice("Return")
+                        .endCell()
                 }
             });
             askToTransfer.send(SEND_MODE_CARRY_ALL_REMAINING_MESSAGE_VALUE);
+
             giftStorage.save();
         }
         ChangeAdmin => {
@@ -124,10 +133,21 @@ fun onInternalMessage(in: InMessage) {
 
             giftStorage.save();
         }
+        ChangeTargetAmount => {
+            var giftStorage = lazy GiftStorage.load();
+
+            assert (in.senderAddress == giftStorage.adminAddress) throw ERROR_NOT_FROM_ADMIN;
+            assert (giftStorage.status == GiftStatus.ACTIVE) throw ERROR_NOT_ACTIVE_GIFT;
+
+            giftStorage.targetAmount = msg.newTargetAmount;
+
+            giftStorage.save();
+        }
     }
 }
 
 struct GiftWalletDataReply {
+    status: GiftStatus
     targetAmount: coins
     collectedAmount: coins
     adminAddress: address
@@ -139,6 +159,7 @@ struct GiftWalletDataReply {
 get fun get_wallet_data(): GiftWalletDataReply {
     var giftStorage = lazy GiftStorage.load();
     return {
+        status: giftStorage.status,
         targetAmount: giftStorage.targetAmount,
         collectedAmount: giftStorage.collectedAmount,
         adminAddress: giftStorage.adminAddress,
@@ -160,4 +181,9 @@ get fun get_collected_amount(): coins {
 get fun get_admin_address(): address {
     var giftStorage = lazy GiftStorage.load();
     return giftStorage.adminAddress;
+}
+
+get fun get_target_amount(): coins {
+    var giftStorage = lazy GiftStorage.load();
+    return giftStorage.targetAmount;
 }

@@ -1,4 +1,4 @@
-enum GiftStatus {
+enum GiftStatus: uint4 {
     ACTIVE,
     PAID,
     CANCELLED
@@ -13,7 +13,6 @@ struct GiftStorage {
     contributors: map<address, coins>
     code: cell
 }
-
 fun GiftStorage.load() {
     return GiftStorage.fromCell(contract.getData());
 }

@@ -92,9 +92,10 @@ fun onInternalMessage(in: InMessage) {
 
             val amountToReturn = giftStorage.contributors.get(in.senderAddress);
             assert (amountToReturn.isFound) throw ERROR_CONTRIBUTOR_NOT_EXIST;
+            val amountAsCoins = amountToReturn.loadValue();
 
             giftStorage.contributors.delete(in.senderAddress);
-            giftStorage.collectedAmount -= amountToReturn.loadValue();
+            giftStorage.collectedAmount -= amountAsCoins;
 
             val askToTransfer = createMessage({
                 bounce: BounceMode.NoBounce,
@@ -102,7 +103,7 @@ fun onInternalMessage(in: InMessage) {
                 value: 0,
                 body: AskToTransfer {
                     queryId: msg.queryId,
-                    amount: amountToReturn.loadValue(),
+                    amount: amountAsCoins,
                     destination: in.senderAddress,
                     responseDestination: in.senderAddress,
                     customPayload: null,

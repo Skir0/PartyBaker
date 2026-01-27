@@ -7,7 +7,7 @@ import {
     ErrorCodes,
     GiftStatus,
     GiftWallet,
-    GiftWalletConfig,
+    GiftWalletConfig, jettonWalletConfigToCell,
     Opcodes,
 } from '../wrappers/GiftWallet';
 import { flattenTransaction } from '@ton/test-utils';
@@ -30,7 +30,33 @@ describe('GiftWallet', () => {
     let target_amount: bigint;
     let result: any = undefined;
 
+    async function transferNotification(jwAddress: Address, senderAddress: Address, amount: number,
+                                        success: boolean, error: number = 0) {
 
+        result = await giftWallet.sendTransferNotification(blockchain.sender(jwAddress), {
+            value: toNano(0.05),
+            amount: toNano(amount),
+            senderAddress: senderAddress,
+            forwardPayload: beginCell().endCell(),
+        });
+
+        expect(result.transactions).toHaveTransaction({
+            from: jwAddress,
+            to: giftWallet.address,
+            success: success,
+            exitCode: error,
+            op: Opcodes.transfer_notification,
+        });
+        expect(await giftWallet.getCollectedAmount()).toBe(toNano(amount));
+        if (!error) {
+            const { contributors } = await giftWallet.getData();
+            expect(contributors.size).toBe(1);
+            const entry = [...contributors.entries()][0];
+            expect(entry[0].equals(senderAddress)).toBe(true);
+            expect(entry[1]).toEqual(toNano(amount));
+        }
+
+    }
     beforeEach(async () => {
         blockchain = await Blockchain.create();
         blockchain.verbosity.vmLogs = 'vm_logs';
@@ -214,55 +240,32 @@ describe('GiftWallet', () => {
                 exitCode: ErrorCodes.not_from_admin,
             });
         });
-    });
-
-    describe("transfer notification", () => {
-
-        it('standard transfer notification', async () => {
+        it('cancel gift and return amount', async () => {
             const jwAddress = calcAddressOfJettonWallet(giftWallet.address, minter.address, jettonWalletCode);
 
-            result = await giftWallet.sendTransferNotification(blockchain.sender(jwAddress), {
+            await transferNotification(jwAddress, admin.address, 40, true);
+
+            result = await giftWallet.sendCancelGift(admin.getSender(), {
                 value: toNano(0.05),
-                amount: toNano(40),
-                senderAddress: admin.address,
-                forwardPayload: beginCell().endCell(),
             });
 
             expect(result.transactions).toHaveTransaction({
-                from: jwAddress,
+                from: admin.address,
                 to: giftWallet.address,
-                success: true,
-                op: Opcodes.transfer_notification
-            });
-            expect(await giftWallet.getCollectedAmount()).toBe(toNano(40));
-        });
-        it('transfer notification with ask to transfer to admin', async () => {
-            const jwAddress = calcAddressOfJettonWallet(giftWallet.address, minter.address, jettonWalletCode);
-
-            await blockchain.setShardAccount(
-                jwAddress,
-                createShardAccount({
-                    address: jwAddress,
-                    code: jettonWalletCode,
-                    data: beginCell().endCell(),
-                    balance: toNano('1'),
-                    workchain: 0,
-                }),
-            );
-
-
-            result = await giftWallet.sendTransferNotification(blockchain.sender(jwAddress), {
-                value: toNano(0.1),
-                amount: toNano(200),
-                senderAddress: admin.address,
-                forwardPayload: beginCell().endCell(),
+                success: true
             });
 
+            const { status } = await giftWallet.getData();
+            expect(status).toBe(GiftStatus.CANCELLED);
+
+            result = await giftWallet.sendReturnAmount(admin.getSender(), {
+                value: toNano(0.05),
+            });
             expect(result.transactions).toHaveTransaction({
-                from: jwAddress,
+                from: admin.address,
                 to: giftWallet.address,
                 success: true,
-                op: Opcodes.transfer_notification
+                op: Opcodes.return_amount,
             });
             expect(result.transactions).toHaveTransaction({
                 from: giftWallet.address,
@@ -271,11 +274,55 @@ describe('GiftWallet', () => {
                 op: Opcodes.ask_to_transfer
             });
 
-            expect(await giftWallet.getStatus()).toBe(GiftStatus.PAID);
-            // const data = await giftWallet.getData();
-            // expect(data.contributors).toEqual(new Map());
-
         });
+    });
+
+    describe("transfer notification", () => {
+
+        it('standard transfer notification', async () => {
+            const jwAddress = calcAddressOfJettonWallet(giftWallet.address, minter.address, jettonWalletCode);
+            await transferNotification(jwAddress, admin.address, 40, true);
+        });
+        it('transfer notification by not walid wallet', async () => {
+            await transferNotification(admin.address, admin.address, 0, false, ErrorCodes.not_valid_wallet);
+        });
+
+        it('transfer notification with ask to transfer to admin', async () => {
+            const jwAddress = calcAddressOfJettonWallet(giftWallet.address, minter.address, jettonWalletCode);
+
+            await blockchain.setShardAccount(
+                jwAddress,
+                createShardAccount({
+                    address: jwAddress,
+                    code: jettonWalletCode,
+                    data: jettonWalletConfigToCell(giftWallet.address, minter.address, jettonWalletCode),
+                    balance: toNano(0),
+                    workchain: 0,
+                }),
+            );
+            // console.log('balance before');
+            // const jwContractBefore = await blockchain.getContract(jwAddress);
+            // const result1 = await jwContractBefore.get('get_wallet_data');
+            // console.log([...result1.stack.entries()]);
+
+            await transferNotification(jwAddress, admin.address, 200, true);
+
+            expect(result.transactions).toHaveTransaction({
+                from: giftWallet.address,
+                to: jwAddress,
+                success: true,
+                op: Opcodes.ask_to_transfer,
+            });
+
+            expect(await giftWallet.getStatus()).toBe(GiftStatus.PAID);
+
+
+            // После транзакции
+            // console.log("balance after")
+            // const jwContractAfter = await blockchain.getContract(jwAddress);
+            // const result2 = await jwContractAfter.get('get_wallet_data');
+            // console.log([...result2.stack.entries()])
+        })
 
     });
 

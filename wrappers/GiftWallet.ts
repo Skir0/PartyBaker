@@ -16,6 +16,22 @@ export enum GiftStatus {
     PAID = 1,
     CANCELLED = 2,
 }
+export const Opcodes = {
+    ask_to_transfer: 0x0f8a7ea5,
+    transfer_notification: 0x7362d09c,
+    cancel_gift: 0x00000100,
+    return_amount: 0x00000200,
+    change_admin: 0x00000300,
+    change_target: 0x00000400,
+};
+
+export const ErrorCodes = {
+    not_valid_wallet: 74,
+    not_active_gift: 1001,
+    not_cancelled_gift: 1002,
+    contributor_not_exist: 35,
+    not_from_admin: 1011,
+};
 export function jettonWalletConfigToCell(ownerAddress: Address, minterAddress: Address, walletCode: Cell) {
     return beginCell()
         .storeCoins(0)
@@ -45,7 +61,7 @@ function parseCellToMap(contributorsCell: Cell | null): Map<Address, bigint> {
 
     const dict = Dictionary.loadDirect(
         Dictionary.Keys.Address(),
-        Dictionary.Values.BigVarUint(16), // <-- coins
+        Dictionary.Values.BigVarUint(4),
         contributorsCell,
     );
 
@@ -69,23 +85,6 @@ export function giftWalletConfigToCell(config: GiftWalletConfig) {
         .storeRef(config.code)
         .endCell();
 }
-
-export const Opcodes = {
-    ask_to_transfer: 0x0f8a7ea5,
-    transfer_notification: 0x7362d09c,
-    cancel_gift: 0x00000100,
-    return_amount: 0x00000200,
-    change_admin: 0x00000300,
-    change_target: 0x00000400,
-};
-
-export const ErrorCodes = {
-    not_valid_wallet: 74,
-    not_active_gift: 1001,
-    not_cancelled_gift: 1002,
-    contributor_not_exist: 35,
-    not_from_admin: 1011,
-};
 
 
 export class GiftWallet implements Contract {

@@ -1,0 +1,24 @@
+import { Address, beginCell, Cell, toNano } from '@ton/core';
+import { compile, NetworkProvider } from '@ton/blueprint';
+import { GiftWallet, GiftWalletConfig, giftWalletConfigToCell } from '../wrappers/GiftWallet';
+
+const ACCEPTED_MINTER_USDT_ADDRESS = Address.parse("EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs");
+const USDT_WALLET_CODE = Cell.fromBase64(
+    'te6ccgECGAEABbsAART/APSkE/S88sgLAQIBYgIDAgLLBAUCASAUFQLz0MtDTAwFxsI47MIAg1yHTHwGCEBeNRRm6kTDhgEDXIfoAMO1E0PoA+kD6QNTU0VBFoUE0yFAF+gJQA88WAc8WzMzJ7VTg+kD6QDH6ADH0AfoAMfoAATFw+DoC0x8BAdM/ARLtRND6APpA+kDU1NEmghBkK30HuuMCJoGBwAdojhkZYOA54tkgUGD+gvAAZY1NVFhxwXy4EkE+kAh+kQwwADy4U36ANTRINDTHwGCEBeNRRm68uBIgEDXIfoA+kAx+kAx+gAg1wsAmtdLwAEBwAGw8rGRMOJUQxsIA/qCEHvdl966juc2OAX6APpA+ChUEgpwVGAEExUDyMsDWPoCAc8WAc8WySHIywET9AAS9ADLAMn5AHB0yMsCygfL/8nQUAjHBfLgShKhRBRQZgPIUAX6AlADzxYBzxbMzMntVPpA0SDXCwHAALORW+MN4CaCECx2uXO64wI1JQoLDAGOIZFykXHi+DkgbpOBJCeRIOIhbpQxgShzkQHiUCOoE6BzgQOjcPg8oAJw+DYSoAFw+Dagc4EECYIQCWYBgHD4N6C88rAlWX8JAOyCEDuaygBw+wL4KEUEcFRgBBMVA8jLA1j6AgHPFgHPFskhyMsBE/QAEvQAywDJIPkAcHTIywLKB8v/ydDIgBgBywUBzxZY+gICmFh3UAPLa8zMlzABcVjLasziyYAR+wBQBaBDFMhQBfoCUAPPFgHPFszMye1UAETIgBABywUBzxZw+gJwActqghDVMnbbAcsfAQHLP8mAQvsAAfwUXwQyNAH6QNIAAQHRlcghzxbJkW3iyIAQAcsFUATPFnD6AnABy2qCENFzVAAByx9QBAHLPyP6RDDAAI41+ChEBHBUYAQTFQPIywNY+gIBzxYBzxbJIcjLARP0ABL0AMsAyfkAcHTIywLKB8v/ydASzxaXMWwScAHLAeL0AMkNBPiCEGUB81S6jiIxNDZRRccF8uBJAvpA0RA0AshQBfoCUAPPFgHPFszMye1U4CWCEPuI4Rm6jiEyNDYD0VExxwXy4EmLAlUSyFAF+gJQA88WAc8WzMzJ7VTgNCSCECNcr1K64wI3I4IQy4YpArrjAjZbIIIQJQjWarrjAmwxDg8QEQAIgFD7AALsMDEyUDPHBfLgSfpA+gDU0SDQ0x8BAYBA1yEhghAPin6luo5NNiCCEFlfB7y6jiwwBPoAMfpAMfQB0SD4OSBulDCBFp/ecYEC8nD4OAFw+DaggRp3cPg2oLzysI4TghDu0jbTupUE0wMx0ZQ08sBI4uLjDVADcBITAEQzUULHBfLgSchQA88WyRNEQMhQBfoCUAPPFgHPFszMye1UAB4wAscF8uBJ1NTRAe1U+wQAGIIQ03IVjLrchA/y8ADOMfoAMfpAMfpAMfQB+gAg1wsAmtdLwAEBwAGw8rGRMOJUQhYhkXKRceL4OSBuk4EkJ5Eg4iFulDGBKHORAeJQI6gToHOBA6Nw+DygAnD4NhKgAXD4NqBzgQQJghAJZgGAcPg3oLzysADAghA7msoAcPsC+ChFBHBUYAQTFQPIywNY+gIBzxYBzxbJIcjLARP0ABL0AMsAySD5AHB0yMsCygfL/8nQyIAYAcsFAc8WWPoCAphYd1ADy2vMzJcwAXFYy2rM4smAEfsAACW9mt9qJofQB9IH0gampoiBIvgkAgJxFhcAha289qJofQB9IH0gampoii+CfBQAuCowAgmKgeRlgax9AQDniwDni2SQ5GWAifoACXoAZYBk/IA4OmRlgWUD5f/k6EAAz68W9qJofQB9IH0gampov5noNsF4OHLr21FNnJfCg7fwrlF5Ap4rYRnDlGJxnk9G7Y90E+YseApBeHdAfpePAaQHEUEbGst3Opa92T+oO7XKhDUBPIxLOskfRYm0eAo4ZGWD+gBkoYBA',
+);
+const CONFIG_ADMIN_ADDRESS = Address.parse("0QASjy3c_RXjK_Qlb2EaX26GaBRjT07Xft5JzCRI3CCFrTV9");
+export const DEPLOYED_CONTRACT_ADDRESS = Address.parse('kQDbvDipAc9fqH8B_p9TkbtxbLWojOIKQk8v5b_szfz55-_v');
+export async function run(provider: NetworkProvider) {
+    const config: GiftWalletConfig = {
+        targetAmount: 200n * 1_000_000n,
+        adminAddress: CONFIG_ADMIN_ADDRESS,
+        acceptedMinterAddress: ACCEPTED_MINTER_USDT_ADDRESS,
+        code: USDT_WALLET_CODE,
+    };
+    const giftWalletContract = provider.open(GiftWallet
+        .createFromConfig(config, await compile('GiftWallet')));
+
+    await giftWalletContract.sendDeploy(provider.sender(), toNano(1));
+
+    await provider.waitForDeploy(giftWalletContract.address);
+}

@@ -93,12 +93,11 @@ export class GiftWallet implements Contract {
         readonly init?: { code: Cell; data: Cell },
     ) {}
 
-    // deploy
+    // use with existing address
     static createFromAddress(address: Address) {
         return new GiftWallet(address);
     }
-
-    // use with existing address
+    // deploy
     static createFromConfig(config: GiftWalletConfig, code: Cell, workchain = 0) {
         const data = giftWalletConfigToCell(config);
         const init = { data, code };

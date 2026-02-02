@@ -1,0 +1,10 @@
+version: "2"
+sql:
+  - schema: "migrations"        # Где лежат ваши файлы CREATE TABLE
+    queries: "query.sql"       # Файл, где вы будете писать SELECT/INSERT
+    engine: "postgresql"
+    gen:
+      go:
+        package: "db"          # Имя пакета в Go
+        out: "internal/db"     # Папка, куда sqlc положит файлы
+        sql_package: "pgx/v5"  # Используем современный драйвер pgx

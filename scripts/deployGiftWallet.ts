@@ -8,6 +8,8 @@ const USDT_WALLET_CODE = Cell.fromBase64(
 );
 const CONFIG_ADMIN_ADDRESS = Address.parse("0QASjy3c_RXjK_Qlb2EaX26GaBRjT07Xft5JzCRI3CCFrTV9");
 export const DEPLOYED_CONTRACT_ADDRESS = Address.parse('kQDbvDipAc9fqH8B_p9TkbtxbLWojOIKQk8v5b_szfz55-_v');
+
+
 export async function run(provider: NetworkProvider) {
     const config: GiftWalletConfig = {
         targetAmount: 200n * 1_000_000n,
@@ -17,6 +19,7 @@ export async function run(provider: NetworkProvider) {
     };
     const giftWalletContract = provider.open(GiftWallet
         .createFromConfig(config, await compile('GiftWallet')));
+    console.log(giftWalletContract.address);
 
     await giftWalletContract.sendDeploy(provider.sender(), toNano(1));
 

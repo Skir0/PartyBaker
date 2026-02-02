@@ -22,6 +22,4 @@ Session.vim
 .emacs/
 .helix/
 
-vesting-contract.tolk
-VestingWallet.ts
-VestingWallet.spec.ts
+env

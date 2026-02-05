@@ -1,85 +1,247 @@
-package main
+package ton
 
 import (
 	"context"
 	"fmt"
 	"log"
-	"sort"
+	"math/big"
+	"strings"
+	"time"
 
 	"github.com/xssnick/tonutils-go/address"
-	"github.com/xssnick/tonutils-go/liteclient"
+	"github.com/xssnick/tonutils-go/tlb"
 	"github.com/xssnick/tonutils-go/ton"
+	"github.com/xssnick/tonutils-go/ton/wallet"
+	"github.com/xssnick/tonutils-go/tvm/cell"
 )
 
-func main() {
-	client := liteclient.NewConnectionPool()
+type GiftWallet struct {
+	Status                GiftStatus
+	TargetAmount          *big.Int
+	CollectedAmount       *big.Int
+	AdminAddress          *address.Address
+	AcceptedMinterAddress *address.Address
+	Contributors          map[string]*big.Int
+	Code                  *cell.Cell
+}
 
-	// connect to mainnet lite servers
-	err := client.AddConnectionsFromConfigUrl(context.Background(), "https://ton-blockchain.github.io/global.config.json")
+func getResultByMethodStr(ctx context.Context, api ton.APIClientWrapped,
+	contractAddress *address.Address, contractMethodStr string) (*ton.ExecutionResult, error) {
+	block, err := api.CurrentMasterchainInfo(ctx)
 	if err != nil {
-		log.Fatalln("connection err: ", err.Error())
-		return
+		log.Println("get block err:", err)
+		return nil, err
 	}
-	// initialize ton api lite connection wrapper
-	api := ton.NewAPIClient(client, ton.ProofCheckPolicyFast).WithRetry()
-
-	// if we want to route all requests to the same node, we can use it
-	ctx := client.StickyContext(context.Background())
-
-	// we need fresh block info to run get methods
-	b, err := api.CurrentMasterchainInfo(ctx)
+	res, err := api.WaitForBlock(block.SeqNo).RunGetMethod(ctx, block, contractAddress, contractMethodStr)
 	if err != nil {
-		log.Fatalln("get block err:", err.Error())
-		return
+		return nil, err
 	}
+	return res, nil
+}
 
-	addr := address.MustParseAddr("EQCD39VS5jcptHL8vMjEXrzGaRcCVYto7HUn4bpAOg8xqB2N")
+func getWalletBySeedPhrase(seedPhrase string, api ton.APIClientWrapped) (*wallet.Wallet, error) {
+	words := strings.Split(seedPhrase, " ")
+	w, err := wallet.FromSeedWithOptions(api, words, wallet.V4R2)
 
-	// we use WaitForBlock to make sure block is ready,
-	// it is optional but escapes us from liteserver block not ready errors
-	res, err := api.WaitForBlock(b.SeqNo).GetAccount(ctx, b, addr)
 	if err != nil {
-		log.Fatalln("get account err:", err.Error())
-		return
+		return nil, err
+	}
+	return w, nil
+}
+
+func packToCellAndSend(w *wallet.Wallet, msg AllowedInternalMessage,
+	targetAddress *address.Address, ctx context.Context) error {
+	body, err := tlb.ToCell(msg)
+	if err != nil {
+		return err
 	}
 
-	fmt.Printf("Is active: %v\n", res.IsActive)
-	if res.IsActive {
-		fmt.Printf("Status: %s\n", res.State.Status)
-		fmt.Printf("Balance: %s TON\n", res.State.Balance.String())
-		if res.Data != nil {
-			fmt.Printf("Data: %s\n", res.Data.Dump())
+	err = w.Send(ctx, &wallet.Message{
+		Mode: 1,
+		InternalMessage: &tlb.InternalMessage{
+			Bounce:  true,
+			DstAddr: targetAddress,
+			Amount:  tlb.MustFromTON("0.05"),
+			Body:    body,
+		},
+	})
+	return nil
+}
+
+func parseCellToMap(ok bool, contributorsCell *cell.Cell, giftWallet *GiftWallet) {
+
+	// создаем объект словаря. 267 - фиксированная длина ключа-адреса в битах
+	dict, err := contributorsCell.BeginParse().LoadDict(267)
+
+	if err == nil {
+		kvs, err := dict.LoadAll()
+		if err == nil {
+			for _, kv := range kvs {
+				// Ключ - это слайс, в котором лежит адрес
+				addr := kv.Key.MustLoadAddr()
+
+				amount := kv.Value.MustLoadBigCoins()
+
+				giftWallet.Contributors[addr.String()] = amount
+
+			}
 		}
 	}
+}
 
-	// take last tx info from account info
-	lastHash := res.LastTxHash
-	lastLt := res.LastTxLT
+func GetData(ctx context.Context, api ton.APIClientWrapped,
+	contractAddress *address.Address) (*GiftWallet, error) {
 
-	fmt.Printf("\nTransactions:\n")
-	for {
-		// last transaction has 0 prev lt
-		if lastLt == 0 {
-			break
-		}
-
-		// load transactions in batches with size 15
-		list, err := api.ListTransactions(ctx, addr, 15, lastLt, lastHash)
-		if err != nil {
-			log.Printf("send err: %s", err.Error())
-			return
-		}
-		// set previous info from the oldest transaction in list
-		lastHash = list[0].PrevTxHash
-		lastLt = list[0].PrevTxLT
-
-		// reverse list to show the newest first
-		sort.Slice(list, func(i, j int) bool {
-			return list[i].LT > list[j].LT
-		})
-
-		for _, t := range list {
-			fmt.Println(t.String())
-		}
+	res, err := getResultByMethodStr(ctx, api,
+		contractAddress, "get_target_amount")
+	if err != nil {
+		return nil, err
 	}
+	tuple := res.AsTuple()
+
+	if len(tuple) < 7 {
+		return nil, fmt.Errorf("tuple is too short, expected 7 elements, got %d", len(tuple))
+	}
+	giftWallet := &GiftWallet{
+		Contributors: make(map[string]*big.Int),
+	}
+	if status, ok := tuple[0].(*big.Int); ok {
+		giftWallet.Status = GiftStatus(status.Int64())
+	}
+	if val, ok := tuple[1].(*big.Int); ok {
+		giftWallet.TargetAmount = val
+	} else {
+		giftWallet.TargetAmount = big.NewInt(0)
+	}
+	giftWallet.CollectedAmount, _ = tuple[2].(*big.Int)
+
+	if adminSlice, ok := tuple[3].(*cell.Slice); ok {
+		giftWallet.AdminAddress = adminSlice.MustLoadAddr()
+	}
+	if minterSlice, ok := tuple[4].(*cell.Slice); ok {
+		giftWallet.AcceptedMinterAddress = minterSlice.MustLoadAddr()
+	}
+
+	contributorsCell, ok := tuple[5].(*cell.Cell)
+	giftWallet.Contributors = make(map[string]*big.Int)
+	if ok && contributorsCell != nil {
+		parseCellToMap(ok, contributorsCell, giftWallet)
+	}
+	if codeCell, ok := tuple[6].(*cell.Cell); ok {
+		giftWallet.Code = codeCell
+	}
+	return giftWallet, nil
+}
+
+func GetStatus(ctx context.Context, api ton.APIClientWrapped, contractAddress *address.Address) (GiftStatus, error) {
+	res, err := getResultByMethodStr(ctx, api,
+		contractAddress, "get_target_amount")
+
+	if err != nil {
+		// maybe not zero
+		return 0, err
+	}
+	status := GiftStatus(res.MustInt(0).Int64())
+
+	return status, nil
+}
+
+func GetCollectedAmount(ctx context.Context, api ton.APIClientWrapped, contractAddress *address.Address) (*big.Int, error) {
+	res, err := getResultByMethodStr(ctx, api,
+		contractAddress, "get_collected_amount")
+	if err != nil {
+		return nil, err
+	}
+	collectedAmount, err := res.Int(0)
+	if err != nil {
+		return nil, err
+	}
+	return collectedAmount, nil
+}
+
+func GetTargetAmount(ctx context.Context, api ton.APIClientWrapped,
+	contractAddress *address.Address) (*big.Int, error) {
+	res, err := getResultByMethodStr(ctx, api,
+		contractAddress, "get_target_amount")
+	if err != nil {
+		return nil, err
+	}
+
+	targetAmount, err := res.Int(0)
+	if err != nil {
+		return nil, err
+	}
+	return targetAmount, nil
+}
+
+func GetAdminAddress(ctx context.Context, api ton.APIClientWrapped, address *address.Address) (*address.Address, error) {
+	block, err := api.CurrentMasterchainInfo(ctx)
+	if err != nil {
+		log.Println("get block err:", err)
+		return nil, err
+	}
+	res, err := api.WaitForBlock(block.SeqNo).RunGetMethod(ctx, block, address, "get_admin_address")
+	if err != nil {
+		// maybe not zero
+		return nil, err
+	}
+	adminAddress, err := res.Slice(0)
+	if err != nil {
+		return nil, err
+	}
+	return adminAddress.MustLoadAddr(), nil
+}
+
+func SendCancelGift(ctx context.Context, api ton.APIClientWrapped,
+	seed string, targetAddress *address.Address) (string, error) {
+
+	w, err := getWalletBySeedPhrase(seed, api)
+
+	msg := CancelGift{
+		QueryId: uint64(time.Now().UnixNano()),
+	}
+	err = packToCellAndSend(w, &msg, targetAddress, ctx)
+
+	if err != nil {
+		return "failed to send cancel gift", err
+	}
+
+	return "send cancel gift to smart contract", nil
+}
+
+func SendChangeAdmin(ctx context.Context, api ton.APIClientWrapped,
+	seed string, targetAddress *address.Address, newAdminAddress *address.Address) (string, error) {
+
+	w, err := getWalletBySeedPhrase(seed, api)
+
+	msg := ChangeAdmin{
+		QueryId:         uint64(time.Now().UnixNano()),
+		NewAdminAddress: newAdminAddress,
+	}
+
+	err = packToCellAndSend(w, &msg, targetAddress, ctx)
+
+	if err != nil {
+		return "failed to send change admin", err
+	}
+
+	return "send change admin to smart contract", nil
+}
+
+func SendChangeTargetAmount(ctx context.Context, api ton.APIClientWrapped,
+	seed string, targetAddress *address.Address, newTargetAmount tlb.Coins) (string, error) {
+
+	w, err := getWalletBySeedPhrase(seed, api)
+
+	msg := ChangeTargetAmount{
+		QueryId:         uint64(time.Now().UnixNano()),
+		NewTargetAmount: newTargetAmount,
+	}
+	err = packToCellAndSend(w, &msg, targetAddress, ctx)
+
+	if err != nil {
+		return "failed to send change target amount", err
+	}
+
+	return "send change target amount", nil
 }

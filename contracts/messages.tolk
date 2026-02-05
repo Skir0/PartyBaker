@@ -6,7 +6,7 @@ struct (0x0f8a7ea5) AskToTransfer  {
     responseDestination: address?
     customPayload: cell?
     forwardTonAmount: coins
-    forwardPayload: cell
+    forwardPayload: cell?
 }
 
 struct (0x7362d09c) TransferNotification {

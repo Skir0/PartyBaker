@@ -11,6 +11,7 @@ import (
 	"github.com/xssnick/tonutils-go/address"
 	"github.com/xssnick/tonutils-go/tlb"
 	"github.com/xssnick/tonutils-go/ton"
+	"github.com/xssnick/tonutils-go/ton/jetton"
 	"github.com/xssnick/tonutils-go/ton/wallet"
 	"github.com/xssnick/tonutils-go/tvm/cell"
 )
@@ -244,4 +245,66 @@ func SendChangeTargetAmount(ctx context.Context, api ton.APIClientWrapped,
 	}
 
 	return "send change target amount", nil
+}
+
+func SendReturnAmount(ctx context.Context, api ton.APIClientWrapped,
+	seed string, targetAddress *address.Address) (string, error) {
+
+	w, err := getWalletBySeedPhrase(seed, api)
+
+	msg := ReturnAmount{
+		QueryId: uint64(time.Now().UnixNano()),
+	}
+	err = packToCellAndSend(w, &msg, targetAddress, ctx)
+
+	if err != nil {
+		return "failed to send return amount", err
+	}
+
+	return "send return amount", nil
+}
+
+// for test
+func SendJettonTransfer(ctx context.Context, api ton.APIClientWrapped, minterAddress *address.Address,
+	targetAddress *address.Address, seed string) (*tlb.Transaction, error) {
+
+	w, err := getWalletBySeedPhrase(seed, api)
+	if err != nil {
+		return nil, err
+	}
+
+	tokenClient := jetton.NewJettonMasterClient(api, minterAddress)
+	jettonWallet, err := tokenClient.GetJettonWallet(ctx, w.WalletAddress())
+	if err != nil {
+		return nil, fmt.Errorf("failed to get jetton wallet: %w", err)
+	}
+
+	// 1. Сумма USDT (6 знаков)
+	amountUSDT := tlb.MustFromDecimal("0.5", 6) // 0.5 USDT
+
+	// 2. Сумма уведомления для контракта (9 знаков!)
+	// Это те деньги, которые придут вашему контракту GiftWallet вместе с уведомлением
+	forwardAmount := tlb.MustFromTON("0.02")
+
+	// 3. Общая сумма TON на всю операцию (9 знаков!)
+	// Должна быть больше чем forwardAmount + комиссии (~0.05-0.1 TON)
+	totalTonGas := tlb.MustFromTON("0.07")
+
+	comment, _ := wallet.CreateCommentCell("hello")
+
+	// responseAddress ставим w.WalletAddress(), чтобы сдача вернулась нам
+	transferPayload, err := jetton.BuildTransferPayload(targetAddress, w.WalletAddress(),
+		amountUSDT, forwardAmount, comment, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	msg := wallet.SimpleMessage(jettonWallet.Address(), totalTonGas, transferPayload)
+
+	transaction, _, err := w.SendWaitTransaction(ctx, msg)
+	if err != nil {
+		return nil, err
+	}
+
+	return transaction, nil
 }

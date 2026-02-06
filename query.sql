@@ -37,3 +37,9 @@ where pg.gift_id = $1;
 select * from Gifts
 where Gifts.contract_address = $1
 limit 1;
+
+-- name: IsGiftContractAddress :one
+select exists(
+    select 1 from Gifts
+    where contract_address = $1 and status = 'active'
+);

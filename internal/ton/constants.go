@@ -3,6 +3,7 @@ package ton
 import "github.com/xssnick/tonutils-go/address"
 
 var GIFT_WALLET_CONTRACT_ADRESS = address.MustParseAddr("kQBF1JjiVsv6iw2JddgjfwqHy2C-IC0Ne8BboT_tO2UUn_BS")
+var ACCEPTED_MINTER_USDT_ADDRESS = address.MustParseAddr("EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs")
 
 const (
 	ask_to_transfer       = 0x0f8a7ea5

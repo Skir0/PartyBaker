@@ -251,3 +251,17 @@ func (q *Queries) GetGiftByContract(ctx context.Context, contractAddress pgtype.
 	)
 	return i, err
 }
+
+const isGiftContractAddress = `-- name: IsGiftContractAddress :one
+select exists(
+    select 1 from Gifts
+    where contract_address = $1 and status = 'active'
+)
+`
+
+func (q *Queries) IsGiftContractAddress(ctx context.Context, contractAddress pgtype.Text) (bool, error) {
+	row := q.db.QueryRow(ctx, isGiftContractAddress, contractAddress)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}

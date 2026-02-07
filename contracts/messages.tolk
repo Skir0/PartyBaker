@@ -1,4 +1,7 @@
 
+struct (0x00000700) TestActiveGift {
+    queryId: uint64
+}
 struct (0x0f8a7ea5) AskToTransfer  {
     queryId: uint64
     amount: coins

@@ -1,4 +1,4 @@
-package ton
+package core
 
 import (
 	"fmt"
@@ -45,6 +45,15 @@ type CancelGift struct {
 }
 
 func (msg *CancelGift) Info() {
+	fmt.Println("CancelGift", msg)
+}
+
+type TestActiveGift struct {
+	_       tlb.Magic `tlb:"#00000700"`
+	QueryId uint64    `tlb:"## 64"`
+}
+
+func (msg *TestActiveGift) Info() {
 	fmt.Println("CancelGift", msg)
 }
 

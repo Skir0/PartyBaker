@@ -1,17 +1,19 @@
-package ton
+package core
 
 import "github.com/xssnick/tonutils-go/address"
 
-var GIFT_WALLET_CONTRACT_ADRESS = address.MustParseAddr("kQBF1JjiVsv6iw2JddgjfwqHy2C-IC0Ne8BboT_tO2UUn_BS")
+var GIFT_WALLET_CONTRACT_ADRESS = address.MustParseAddr("kQC54WrttsCmxNgJMEFfof8RF4S8wjVwT4Egee2yDaEtlKF5")
 var ACCEPTED_MINTER_USDT_ADDRESS = address.MustParseAddr("EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs")
 
+type OpCodes = uint32
+
 const (
-	ask_to_transfer       = 0x0f8a7ea5
-	transfer_notification = 0x7362d09c
-	cancel_gift           = 0x00000100
-	return_amount         = 0x00000200
-	change_admin          = 0x00000300
-	change_target         = 0x00000400
+	ASK_TO_TRANSFER       OpCodes = 0x0f8a7ea5
+	TRANSFER_NOTIFICATION OpCodes = 0x7362d09c
+	CANCEL_GIFT           OpCodes = 0x00000100
+	RETURN_AMOUNT         OpCodes = 0x00000200
+	CHANGE_ADMIN          OpCodes = 0x00000300
+	CHANGE_TARGET         OpCodes = 0x00000400
 )
 
 const (

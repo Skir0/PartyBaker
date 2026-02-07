@@ -1,4 +1,4 @@
-package ton
+package core
 
 import (
 	"context"
@@ -136,7 +136,7 @@ func GetData(ctx context.Context, api ton.APIClientWrapped,
 
 func GetStatus(ctx context.Context, api ton.APIClientWrapped, contractAddress *address.Address) (GiftStatus, error) {
 	res, err := getResultByMethodStr(ctx, api,
-		contractAddress, "get_target_amount")
+		contractAddress, "get_status")
 
 	if err != nil {
 		// maybe not zero
@@ -175,15 +175,10 @@ func GetTargetAmount(ctx context.Context, api ton.APIClientWrapped,
 	return targetAmount, nil
 }
 
-func GetAdminAddress(ctx context.Context, api ton.APIClientWrapped, address *address.Address) (*address.Address, error) {
-	block, err := api.CurrentMasterchainInfo(ctx)
+func GetAdminAddress(ctx context.Context, api ton.APIClientWrapped, contractAddress *address.Address) (*address.Address, error) {
+	res, err := getResultByMethodStr(ctx, api,
+		contractAddress, "get_admin_address")
 	if err != nil {
-		log.Println("get block err:", err)
-		return nil, err
-	}
-	res, err := api.WaitForBlock(block.SeqNo).RunGetMethod(ctx, block, address, "get_admin_address")
-	if err != nil {
-		// maybe not zero
 		return nil, err
 	}
 	adminAddress, err := res.Slice(0)
@@ -191,6 +186,24 @@ func GetAdminAddress(ctx context.Context, api ton.APIClientWrapped, address *add
 		return nil, err
 	}
 	return adminAddress.MustLoadAddr(), nil
+}
+
+// SendTestActiveGift only for test
+func SendTestActiveGift(ctx context.Context, api ton.APIClientWrapped,
+	seed string, targetAddress *address.Address) (string, error) {
+	w, err := getWalletBySeedPhrase(seed, api)
+
+	msg := TestActiveGift{
+		QueryId: uint64(time.Now().UnixNano()),
+	}
+
+	err = packToCellAndSend(w, &msg, targetAddress, ctx)
+
+	if err != nil {
+		return "failed to send test active gift", err
+	}
+
+	return "send test active gift to smart contract", nil
 }
 
 func SendCancelGift(ctx context.Context, api ton.APIClientWrapped,

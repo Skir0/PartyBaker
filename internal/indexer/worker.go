@@ -1,6 +1,7 @@
 package indexer
 
 import (
+	"PartyBaker/internal/core"
 	"PartyBaker/internal/repository"
 	"context"
 	"fmt"
@@ -12,7 +13,29 @@ import (
 	"github.com/xssnick/tonutils-go/ton"
 )
 
-func isGiftContractAddress(accountAddr []byte, repo *repository.Repository, ctx context.Context) bool {
+type Worker struct {
+	repo *repository.Repository
+	api  ton.APIClientWrapped
+}
+
+func NewWorker(repo *repository.Repository, api ton.APIClientWrapped) *Worker {
+	return &Worker{
+		repo: repo,
+		api:  api,
+	}
+}
+
+func (worker *Worker) isGiftContractAddress(accountAddr []byte, ctx context.Context) bool {
+	fmt.Println("check active/not active gift")
+
+	textValue := parseBytesToText(accountAddr)
+	fmt.Println("check address", textValue.String)
+	exists, _ := worker.repo.IsGiftContractAddr(ctx, textValue)
+	fmt.Println("gift active?", exists)
+	return exists
+}
+
+func parseBytesToText(accountAddr []byte) pgtype.Text {
 	// 1. Превращаем 32 байта в нормальную строку TON (User-friendly)
 	// Шард (Workchain) обычно 0
 	addr := address.NewAddress(0, 0, accountAddr)
@@ -21,11 +44,53 @@ func isGiftContractAddress(accountAddr []byte, repo *repository.Repository, ctx 
 		String: addr.String(),
 		Valid:  true,
 	}
-	exists, err := repo.IsGiftContractActive(ctx, textValue)
-	if err != nil {
-		return false
+	return textValue
+}
+
+func (worker *Worker) processTransaction(transaction *tlb.Transaction, ctx context.Context) error {
+	fmt.Println("Processing transaction")
+	if transaction.IO.In == nil ||
+		transaction.IO.In.MsgType != tlb.MsgTypeInternal {
+		return fmt.Errorf("failed type of internal message")
 	}
-	return exists
+	inMsg := transaction.IO.In.AsInternal()
+	body := inMsg.Body.BeginParse()
+
+	op, err := body.LoadUInt(32)
+	if err != nil {
+		return fmt.Errorf("failed to load op")
+	}
+
+	switch uint32(op) {
+	case core.TRANSFER_NOTIFICATION:
+		transferNotification := &core.TransferNotification{}
+		err = tlb.LoadFromCell(transferNotification, body)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("Получен вклад: %s от %s\n", transferNotification.Amount.Nano().String(),
+			transferNotification.SenderAddress.String())
+
+	case core.CANCEL_GIFT:
+		textAddr := parseBytesToText(transaction.AccountAddr)
+		err := worker.repo.CancelGiftByContract(ctx, textAddr)
+		if err != nil {
+			log.Println("DB Error on cancel:", err)
+		} else {
+			fmt.Println("SUCCESS: Gift marked as cancelled in DB")
+		}
+
+	case core.RETURN_AMOUNT:
+
+	case core.CHANGE_ADMIN:
+
+	case core.CHANGE_TARGET:
+
+	default:
+		log.Printf("WARNING: unknown transaction type: %v", transaction.IO.In.MsgType)
+	}
+	return nil
+
 }
 
 // func to get storage map key
@@ -63,10 +128,10 @@ func getNotSeenShards(ctx context.Context, api ton.APIClientWrapped, shard *ton.
 // FYI: You can find more advanced, optimized and parallelized block scanner in payment network implementation:
 // https://github.com/xssnick/ton-payment-network/blob/master/tonpayments/chain/block-scan.go
 
-func Run(repo *repository.Repository, api ton.APIClientWrapped) {
+func (worker *Worker) Run(ctx context.Context) {
 	log.Println("checking proofs since config init block, it may take near a minute...")
 
-	master, err := api.GetMasterchainInfo(context.Background())
+	master, err := worker.api.GetMasterchainInfo(context.Background())
 	if err != nil {
 		log.Fatalln("get masterchain info err: ", err.Error())
 		return
@@ -79,7 +144,7 @@ func Run(repo *repository.Repository, api ton.APIClientWrapped) {
 
 	// bound all requests to single lite server for consistency,
 	// if it will go down, another lite server will be used
-	ctx := api.Client().StickyContext(context.Background())
+	// ctx := worker.api.Client().StickyContext(context.Background())
 
 	// storage for last seen shard seqno
 	// in order not to read too old transactions
@@ -87,7 +152,7 @@ func Run(repo *repository.Repository, api ton.APIClientWrapped) {
 
 	// getting information about other work-chains and shards of first master block
 	// to init storage of last seen shard seq numbers
-	firstShards, err := api.GetBlockShardsInfo(ctx, master)
+	firstShards, err := worker.api.GetBlockShardsInfo(ctx, master)
 	if err != nil {
 		log.Fatalln("get shards err:", err.Error())
 		return
@@ -100,7 +165,7 @@ func Run(repo *repository.Repository, api ton.APIClientWrapped) {
 		log.Printf("scanning %d master block...\n", master.SeqNo)
 
 		// getting information about other work-chains and shards of master block
-		currentShards, err := api.GetBlockShardsInfo(ctx, master)
+		currentShards, err := worker.api.GetBlockShardsInfo(ctx, master)
 		if err != nil {
 			log.Fatalln("get shards err:", err.Error())
 			return
@@ -110,7 +175,7 @@ func Run(repo *repository.Repository, api ton.APIClientWrapped) {
 		// thus we need to scan a bit back in case of discovering a hole, till last seen, to fill the misses.
 		var newShards []*ton.BlockIDExt
 		for _, shard := range currentShards {
-			notSeen, err := getNotSeenShards(ctx, api, shard, shardLastSeqno)
+			notSeen, err := getNotSeenShards(ctx, worker.api, shard, shardLastSeqno)
 			if err != nil {
 				log.Fatalln("get not seen shards err:", err.Error())
 				return
@@ -132,7 +197,7 @@ func Run(repo *repository.Repository, api ton.APIClientWrapped) {
 
 			// load all transactions in batches with 100 transactions in each while exists
 			for more {
-				fetchedIDs, more, err = api.WaitForBlock(master.SeqNo).GetBlockTransactionsV2(ctx, shard, 100, after)
+				fetchedIDs, more, err = worker.api.WaitForBlock(master.SeqNo).GetBlockTransactionsV2(ctx, shard, 100, after)
 				if err != nil {
 					log.Fatalln("get tx ids err:", err.Error())
 					return
@@ -145,7 +210,7 @@ func Run(repo *repository.Repository, api ton.APIClientWrapped) {
 
 				for _, id := range fetchedIDs {
 					// get full transaction by id
-					tx, err := api.GetTransaction(ctx, shard, address.NewAddress(0, byte(shard.Workchain), id.Account), id.LT)
+					tx, err := worker.api.GetTransaction(ctx, shard, address.NewAddress(0, byte(shard.Workchain), id.Account), id.LT)
 					if err != nil {
 						log.Fatalln("get tx data err:", err.Error())
 						return
@@ -157,7 +222,22 @@ func Run(repo *repository.Repository, api ton.APIClientWrapped) {
 
 		for i, transaction := range txList {
 			log.Println(i, transaction.String())
-			if isGiftContractAddress(transaction.AccountAddr, repo, ctx) {
+			// todo check success
+			desc, ok := transaction.Description.(tlb.TransactionDescriptionOrdinary)
+			if !ok {
+				continue // Это не обычная транзакция (например, системная), пропускаем
+			}
+			// 2. Проверяем фазу вычислений (Compute Phase)
+			// Если фазы нет или она была пропущена (skipped) - значит код не выполнялся
+			if desc.ComputePhase.Phase == nil ||
+				desc.Aborted || desc.Destroyed {
+				continue
+			}
+			if worker.isGiftContractAddress(transaction.AccountAddr, ctx) {
+				err := worker.processTransaction(transaction, ctx)
+				if err != nil {
+					continue
+				}
 			}
 		}
 
@@ -165,7 +245,7 @@ func Run(repo *repository.Repository, api ton.APIClientWrapped) {
 			log.Printf("no transactions in %d block\n", master.SeqNo)
 		}
 
-		master, err = api.WaitForBlock(master.SeqNo+1).LookupBlock(ctx, master.Workchain, master.Shard, master.SeqNo+1)
+		master, err = worker.api.WaitForBlock(master.SeqNo+1).LookupBlock(ctx, master.Workchain, master.Shard, master.SeqNo+1)
 		if err != nil {
 			log.Fatalln("get masterchain info err: ", err.Error())
 			return

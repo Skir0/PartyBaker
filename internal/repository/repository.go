@@ -20,6 +20,14 @@ func NewRepository(pool *pgxpool.Pool) *Repository {
 	}
 }
 
-func (r *Repository) IsGiftContractActive(ctx context.Context, contractAddress pgtype.Text) (bool, error) {
+func (r *Repository) IsGiftContractAddr(ctx context.Context, contractAddress pgtype.Text) (bool, error) {
 	return r.query.IsGiftContractAddress(ctx, contractAddress)
+}
+
+func (r *Repository) CancelGiftByContract(ctx context.Context, contractAddress pgtype.Text) error {
+	err := r.query.CancelGiftByContract(ctx, contractAddress)
+	if err != nil {
+		return err
+	}
+	return nil
 }

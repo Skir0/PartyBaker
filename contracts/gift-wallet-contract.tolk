@@ -8,7 +8,8 @@ type AllowedInternalMessage =  TransferNotification
                                 | CancelGift
                                 | ReturnAmount
                                 | ChangeAdmin
-                                | ChangeTargetAmount;
+                                | ChangeTargetAmount
+                                | TestActiveGift;
 
 fun onInternalMessage(in: InMessage) {
 
@@ -20,6 +21,11 @@ fun onInternalMessage(in: InMessage) {
     val msg = lazy AllowedInternalMessage.fromSlice(in.body);
 
     match (msg) {
+        TestActiveGift => {
+            var giftStorage = lazy GiftStorage.load();
+            giftStorage.status = GiftStatus.ACTIVE;
+            giftStorage.save();
+        }
 
         // transfer amount
         TransferNotification => {

@@ -1,4 +1,4 @@
-package ton
+package core
 
 import (
 	"context"
@@ -24,7 +24,7 @@ func InitAPI(ctx context.Context, config string) (ton.APIClientWrapped, error) {
 	api.SetTrustedBlockFromConfig(cfg)
 
 	// api который реализует высокоуровневые методы, работает быстро,
-	//Api = ton.NewAPIClient(client)
+	//Api = core.NewAPIClient(client)
 	//
 	//// автоматически повторяет запросы при временных ошибках.
 	//Api = Api.WithRetry(3)

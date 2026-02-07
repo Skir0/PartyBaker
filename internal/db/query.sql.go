@@ -11,6 +11,17 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const cancelGiftByContract = `-- name: CancelGiftByContract :exec
+update Gifts
+set status = 'cancelled'
+where contract_address = $1
+`
+
+func (q *Queries) CancelGiftByContract(ctx context.Context, contractAddress pgtype.Text) error {
+	_, err := q.db.Exec(ctx, cancelGiftByContract, contractAddress)
+	return err
+}
+
 const createEvent = `-- name: CreateEvent :one
 insert into Events (name, date, deadline, admin_id)
 values ($1, $2, $3, $4)

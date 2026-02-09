@@ -45,10 +45,11 @@ type ParticipantGift struct {
 }
 
 type User struct {
-	ID        int64
-	FirstName pgtype.Text
-	LastName  pgtype.Text
-	Username  pgtype.Text
-	CreatedAt pgtype.Date
-	LangCode  pgtype.Text
+	ID            int64
+	FirstName     pgtype.Text
+	LastName      pgtype.Text
+	Username      pgtype.Text
+	CreatedAt     pgtype.Date
+	LangCode      pgtype.Text
+	WalletAddress pgtype.Text
 }

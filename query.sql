@@ -1,6 +1,6 @@
 -- name: CreateUser :one
-insert into Users (first_name, last_name, username, lang_code)
-values ($1, $2, $3, $4)
+insert into Users (first_name, last_name, username, lang_code, wallet_address)
+values ($1, $2, $3, $4, $5)
 returning *;
 
 -- name: CreateEvent :one
@@ -28,6 +28,10 @@ values ($1, $2, $3, $4, $5)
 on conflict (transaction_hash) do nothing
 returning *;
 
+-- name: GetAllActiveGiftsAddresses :many
+select contract_address from Gifts
+where status = 'active';
+
 -- name: GetAllParticipantsOfGift :many
 select * from Participants
 inner join Participant_gift as pg on Participants.id = pg.participant_id
@@ -38,13 +42,23 @@ select * from Gifts
 where Gifts.contract_address = $1
 limit 1;
 
--- name: IsGiftContractAddress :one
+-- name: IsActiveGiftByContract :one
 select exists(
     select 1 from Gifts
     where contract_address = $1 and status = 'active'
 );
 
--- name: CancelGiftByContract :exec
+-- name: CancelGiftByContract :execresult
 update Gifts
 set status = 'cancelled'
 where contract_address = $1;
+
+-- name: GetUserByWallet :one
+select id from Users
+where wallet_address = $1
+limit 1;
+
+-- name: ChangeAdminByContract :exec
+update Gifts
+set admin_id = $1
+where contract_address = $2;

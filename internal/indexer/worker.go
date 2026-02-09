@@ -14,8 +14,9 @@ import (
 )
 
 type Worker struct {
-	repo *repository.Repository
-	api  ton.APIClientWrapped
+	repo        *repository.Repository
+	api         ton.APIClientWrapped
+	activeGifts map[string]bool
 }
 
 func NewWorker(repo *repository.Repository, api ton.APIClientWrapped) *Worker {
@@ -25,14 +26,20 @@ func NewWorker(repo *repository.Repository, api ton.APIClientWrapped) *Worker {
 	}
 }
 
-func (worker *Worker) isGiftContractAddress(accountAddr []byte, ctx context.Context) bool {
-	fmt.Println("check active/not active gift")
+func (worker *Worker) UpdateCache(ctx context.Context) {
+	ads, _ := worker.repo.GetAllActiveGiftsAddresses(ctx)
+	newCache := make(map[string]bool)
+	for _, addr := range ads {
+		parsedAddr, err := address.ParseAddr(addr.String)
+		log.Println("pgtype:", addr)
+		log.Println("CACHE:", parsedAddr.StringRaw())
 
-	textValue := parseBytesToText(accountAddr)
-	fmt.Println("check address", textValue.String)
-	exists, _ := worker.repo.IsGiftContractAddr(ctx, textValue)
-	fmt.Println("gift active?", exists)
-	return exists
+		if err != nil {
+			continue
+		}
+		newCache[parsedAddr.StringRaw()] = true
+	}
+	worker.activeGifts = newCache
 }
 
 func parseBytesToText(accountAddr []byte) pgtype.Text {
@@ -47,7 +54,8 @@ func parseBytesToText(accountAddr []byte) pgtype.Text {
 	return textValue
 }
 
-func (worker *Worker) processTransaction(transaction *tlb.Transaction, ctx context.Context) error {
+func (worker *Worker) processTransaction(transaction *tlb.Transaction, ctx context.Context, contractAddress pgtype.Text) error {
+
 	fmt.Println("Processing transaction")
 	if transaction.IO.In == nil ||
 		transaction.IO.In.MsgType != tlb.MsgTypeInternal {
@@ -72,8 +80,7 @@ func (worker *Worker) processTransaction(transaction *tlb.Transaction, ctx conte
 			transferNotification.SenderAddress.String())
 
 	case core.CANCEL_GIFT:
-		textAddr := parseBytesToText(transaction.AccountAddr)
-		err := worker.repo.CancelGiftByContract(ctx, textAddr)
+		err := worker.repo.CancelGift(ctx, contractAddress)
 		if err != nil {
 			log.Println("DB Error on cancel:", err)
 		} else {
@@ -83,6 +90,12 @@ func (worker *Worker) processTransaction(transaction *tlb.Transaction, ctx conte
 	case core.RETURN_AMOUNT:
 
 	case core.CHANGE_ADMIN:
+		err := worker.repo.CancelGift(ctx, contractAddress)
+		if err != nil {
+			log.Println("DB Error on cancel:", err)
+		} else {
+			fmt.Println("SUCCESS: Gift marked as cancelled in DB")
+		}
 
 	case core.CHANGE_TARGET:
 
@@ -129,6 +142,10 @@ func getNotSeenShards(ctx context.Context, api ton.APIClientWrapped, shard *ton.
 // https://github.com/xssnick/ton-payment-network/blob/master/tonpayments/chain/block-scan.go
 
 func (worker *Worker) Run(ctx context.Context) {
+	worker.UpdateCache(ctx)
+	for addr := range worker.activeGifts {
+		fmt.Println("active gift", addr)
+	}
 	log.Println("checking proofs since config init block, it may take near a minute...")
 
 	master, err := worker.api.GetMasterchainInfo(context.Background())
@@ -185,7 +202,7 @@ func (worker *Worker) Run(ctx context.Context) {
 		}
 		newShards = append(newShards, master)
 
-		var txList []*tlb.Transaction
+		// var txList []*tlb.Transaction
 
 		// for each shard block getting transactions
 		for _, shard := range newShards {
@@ -209,40 +226,40 @@ func (worker *Worker) Run(ctx context.Context) {
 				}
 
 				for _, id := range fetchedIDs {
-					// get full transaction by id
-					tx, err := worker.api.GetTransaction(ctx, shard, address.NewAddress(0, byte(shard.Workchain), id.Account), id.LT)
-					if err != nil {
-						log.Fatalln("get tx data err:", err.Error())
-						return
+					addr := address.NewAddress(0, byte(shard.Workchain), id.Account)
+
+					// todo also there are cases with canceled gift
+					if !(worker.activeGifts[addr.StringRaw()]) {
+						continue
 					}
-					txList = append(txList, tx)
+					fmt.Printf("!!! Найдена транзакция с активным подакром на наш контракт: %s\n", addr.StringRaw())
+					tx, err := worker.api.GetTransaction(ctx, shard, addr, id.LT)
+					if err != nil {
+						log.Println("get tx data err:", err.Error())
+						continue
+					}
+					desc, ok := tx.Description.(tlb.TransactionDescriptionOrdinary)
+					if !ok {
+						continue // Это не обычная транзакция (например, системная), пропускаем
+					}
+					// 2. Проверяем фазу вычислений (Compute Phase)
+					// Если фазы нет или она была пропущена (skipped) - значит код не выполнялся
+					if desc.ComputePhase.Phase == nil ||
+						desc.Aborted || desc.Destroyed {
+						continue
+					}
+					err = worker.processTransaction(tx, ctx,
+						// maybe delete parameter
+						pgtype.Text{
+							String: addr.Testnet(true).String(),
+							Valid:  true,
+						})
+
+					if err != nil {
+						continue
+					}
 				}
 			}
-		}
-
-		for i, transaction := range txList {
-			log.Println(i, transaction.String())
-			// todo check success
-			desc, ok := transaction.Description.(tlb.TransactionDescriptionOrdinary)
-			if !ok {
-				continue // Это не обычная транзакция (например, системная), пропускаем
-			}
-			// 2. Проверяем фазу вычислений (Compute Phase)
-			// Если фазы нет или она была пропущена (skipped) - значит код не выполнялся
-			if desc.ComputePhase.Phase == nil ||
-				desc.Aborted || desc.Destroyed {
-				continue
-			}
-			if worker.isGiftContractAddress(transaction.AccountAddr, ctx) {
-				err := worker.processTransaction(transaction, ctx)
-				if err != nil {
-					continue
-				}
-			}
-		}
-
-		if len(txList) == 0 {
-			log.Printf("no transactions in %d block\n", master.SeqNo)
 		}
 
 		master, err = worker.api.WaitForBlock(master.SeqNo+1).LookupBlock(ctx, master.Workchain, master.Shard, master.SeqNo+1)

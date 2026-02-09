@@ -8,17 +8,33 @@ package db
 import (
 	"context"
 
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const cancelGiftByContract = `-- name: CancelGiftByContract :exec
+const cancelGiftByContract = `-- name: CancelGiftByContract :execresult
 update Gifts
 set status = 'cancelled'
 where contract_address = $1
 `
 
-func (q *Queries) CancelGiftByContract(ctx context.Context, contractAddress pgtype.Text) error {
-	_, err := q.db.Exec(ctx, cancelGiftByContract, contractAddress)
+func (q *Queries) CancelGiftByContract(ctx context.Context, contractAddress pgtype.Text) (pgconn.CommandTag, error) {
+	return q.db.Exec(ctx, cancelGiftByContract, contractAddress)
+}
+
+const changeAdminByContract = `-- name: ChangeAdminByContract :exec
+update Gifts
+set admin_id = $1
+where contract_address = $2
+`
+
+type ChangeAdminByContractParams struct {
+	AdminID         int32
+	ContractAddress pgtype.Text
+}
+
+func (q *Queries) ChangeAdminByContract(ctx context.Context, arg ChangeAdminByContractParams) error {
+	_, err := q.db.Exec(ctx, changeAdminByContract, arg.AdminID, arg.ContractAddress)
 	return err
 }
 
@@ -160,16 +176,17 @@ func (q *Queries) CreateParticipantGift(ctx context.Context, arg CreateParticipa
 }
 
 const createUser = `-- name: CreateUser :one
-insert into Users (first_name, last_name, username, lang_code)
-values ($1, $2, $3, $4)
-returning id, first_name, last_name, username, created_at, lang_code
+insert into Users (first_name, last_name, username, lang_code, wallet_address)
+values ($1, $2, $3, $4, $5)
+returning id, first_name, last_name, username, created_at, lang_code, wallet_address
 `
 
 type CreateUserParams struct {
-	FirstName pgtype.Text
-	LastName  pgtype.Text
-	Username  pgtype.Text
-	LangCode  pgtype.Text
+	FirstName     pgtype.Text
+	LastName      pgtype.Text
+	Username      pgtype.Text
+	LangCode      pgtype.Text
+	WalletAddress pgtype.Text
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
@@ -178,6 +195,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		arg.LastName,
 		arg.Username,
 		arg.LangCode,
+		arg.WalletAddress,
 	)
 	var i User
 	err := row.Scan(
@@ -187,8 +205,34 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.Username,
 		&i.CreatedAt,
 		&i.LangCode,
+		&i.WalletAddress,
 	)
 	return i, err
+}
+
+const getAllActiveGiftsAddresses = `-- name: GetAllActiveGiftsAddresses :many
+select contract_address from Gifts
+where status = 'active'
+`
+
+func (q *Queries) GetAllActiveGiftsAddresses(ctx context.Context) ([]pgtype.Text, error) {
+	rows, err := q.db.Query(ctx, getAllActiveGiftsAddresses)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []pgtype.Text
+	for rows.Next() {
+		var contract_address pgtype.Text
+		if err := rows.Scan(&contract_address); err != nil {
+			return nil, err
+		}
+		items = append(items, contract_address)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const getAllParticipantsOfGift = `-- name: GetAllParticipantsOfGift :many
@@ -263,15 +307,28 @@ func (q *Queries) GetGiftByContract(ctx context.Context, contractAddress pgtype.
 	return i, err
 }
 
-const isGiftContractAddress = `-- name: IsGiftContractAddress :one
+const getUserByWallet = `-- name: GetUserByWallet :one
+select id from Users
+where wallet_address = $1
+limit 1
+`
+
+func (q *Queries) GetUserByWallet(ctx context.Context, walletAddress pgtype.Text) (int64, error) {
+	row := q.db.QueryRow(ctx, getUserByWallet, walletAddress)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
+}
+
+const isActiveGiftByContract = `-- name: IsActiveGiftByContract :one
 select exists(
     select 1 from Gifts
     where contract_address = $1 and status = 'active'
 )
 `
 
-func (q *Queries) IsGiftContractAddress(ctx context.Context, contractAddress pgtype.Text) (bool, error) {
-	row := q.db.QueryRow(ctx, isGiftContractAddress, contractAddress)
+func (q *Queries) IsActiveGiftByContract(ctx context.Context, contractAddress pgtype.Text) (bool, error) {
+	row := q.db.QueryRow(ctx, isActiveGiftByContract, contractAddress)
 	var exists bool
 	err := row.Scan(&exists)
 	return exists, err

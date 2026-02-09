@@ -22,6 +22,11 @@ func main() {
 	//s := "kQC54WrttsCmxNgJMEFfof8RF4S8wjVwT4Egee2yDaEtlKF5"
 	//addr := address.NewAddress(0, 0, []byte(s))
 	//fmt.Println(addr.StringRaw())
+	//fmt.Println(pgtype.Text{
+	//	String: s,
+	//	Valid:  true,
+	//})
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel() // Остановит всё при выходе из main
 
@@ -29,7 +34,7 @@ func main() {
 	if err != nil {
 		fmt.Println("Error loading .env file:", err)
 	}
-	fmt.Println("Starting server...")
+	fmt.Println("Starting server...", time.Now())
 
 	dbPool, err := pgxpool.New(ctx, os.Getenv("DATABASE_URL"))
 	if err != nil {
@@ -46,25 +51,24 @@ func main() {
 	fmt.Println("Initializing client API...")
 
 	worker := indexer.NewWorker(repo, api)
-
 	go func() {
 		fmt.Println("Starting indexer...")
 		worker.Run(ctx)
 	}()
 	fmt.Println("Server is running. Press Ctrl+C to stop.")
-
 	status1, _ := core.GetStatus(ctx, api, core.GIFT_WALLET_CONTRACT_ADRESS)
-	fmt.Println("Status at start", status1)
+	fmt.Println("Status at start", status1, time.Now())
+	time.Sleep(10 * time.Second)
 	str, err := core.SendCancelGift(ctx, api, os.Getenv("SEED"), core.GIFT_WALLET_CONTRACT_ADRESS)
 	// str, err := core.SendTestActiveGift(ctx, api, os.Getenv("SEED"), core.GIFT_WALLET_CONTRACT_ADRESS)
+
 	if err != nil {
 		return
 	}
-	fmt.Println(str)
-
-	time.Sleep(5 * time.Second)
+	fmt.Println(str, time.Now())
+	time.Sleep(10 * time.Second)
 	status2, _ := core.GetStatus(ctx, api, core.GIFT_WALLET_CONTRACT_ADRESS)
-	fmt.Println("Status at end", status2)
+	fmt.Println("Status at end", status2, time.Now())
 
 	// Создаем канал для прослушивания сигналов ОС
 	quit := make(chan os.Signal, 1)

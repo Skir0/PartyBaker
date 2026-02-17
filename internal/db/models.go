@@ -20,13 +20,14 @@ type Gift struct {
 	ID              int32
 	Name            pgtype.Text
 	Link            pgtype.Text
-	Price           pgtype.Int8
+	TargetAmount    pgtype.Int8
 	Status          string
 	ContractAddress pgtype.Text
 	JettonAddress   pgtype.Text
 	EventID         int32
 	RecipientID     int32
 	AdminID         int32
+	CollectedAmount pgtype.Int8
 }
 
 type Participant struct {

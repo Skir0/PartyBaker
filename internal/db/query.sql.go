@@ -12,29 +12,48 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const cancelGiftByContract = `-- name: CancelGiftByContract :execresult
+const cancelGift = `-- name: CancelGift :execresult
 update Gifts
 set status = 'cancelled'
 where contract_address = $1
 `
 
-func (q *Queries) CancelGiftByContract(ctx context.Context, contractAddress pgtype.Text) (pgconn.CommandTag, error) {
-	return q.db.Exec(ctx, cancelGiftByContract, contractAddress)
+func (q *Queries) CancelGift(ctx context.Context, contractAddress pgtype.Text) (pgconn.CommandTag, error) {
+	return q.db.Exec(ctx, cancelGift, contractAddress)
 }
 
-const changeAdminByContract = `-- name: ChangeAdminByContract :exec
+const changeAdmin = `-- name: ChangeAdmin :exec
 update Gifts
-set admin_id = $1
+set admin_id = (select id
+                from Users
+                where wallet_address = $1
+                limit 1)
 where contract_address = $2
 `
 
-type ChangeAdminByContractParams struct {
-	AdminID         int32
+type ChangeAdminParams struct {
+	WalletAddress   pgtype.Text
 	ContractAddress pgtype.Text
 }
 
-func (q *Queries) ChangeAdminByContract(ctx context.Context, arg ChangeAdminByContractParams) error {
-	_, err := q.db.Exec(ctx, changeAdminByContract, arg.AdminID, arg.ContractAddress)
+func (q *Queries) ChangeAdmin(ctx context.Context, arg ChangeAdminParams) error {
+	_, err := q.db.Exec(ctx, changeAdmin, arg.WalletAddress, arg.ContractAddress)
+	return err
+}
+
+const changeTargetAmount = `-- name: ChangeTargetAmount :exec
+update Gifts
+set target_amount = $1
+where contract_address = $2
+`
+
+type ChangeTargetAmountParams struct {
+	TargetAmount    pgtype.Int8
+	ContractAddress pgtype.Text
+}
+
+func (q *Queries) ChangeTargetAmount(ctx context.Context, arg ChangeTargetAmountParams) error {
+	_, err := q.db.Exec(ctx, changeTargetAmount, arg.TargetAmount, arg.ContractAddress)
 	return err
 }
 
@@ -70,18 +89,19 @@ func (q *Queries) CreateEvent(ctx context.Context, arg CreateEventParams) (Event
 }
 
 const createGift = `-- name: CreateGift :one
-insert into Gifts (name, link, price,
+insert into Gifts (name, link, target_amount, collected_amount,
                    contract_address, jetton_address,
                    event_id, recipient_id, admin_id)
 values ($1, $2, $3, $4, $5,
-        $6, $7, $8)
-returning id, name, link, price, status, contract_address, jetton_address, event_id, recipient_id, admin_id
+        $6, $7, $8, $9)
+returning id, name, link, target_amount, status, contract_address, jetton_address, event_id, recipient_id, admin_id, collected_amount
 `
 
 type CreateGiftParams struct {
 	Name            pgtype.Text
 	Link            pgtype.Text
-	Price           pgtype.Int8
+	TargetAmount    pgtype.Int8
+	CollectedAmount pgtype.Int8
 	ContractAddress pgtype.Text
 	JettonAddress   pgtype.Text
 	EventID         int32
@@ -93,7 +113,8 @@ func (q *Queries) CreateGift(ctx context.Context, arg CreateGiftParams) (Gift, e
 	row := q.db.QueryRow(ctx, createGift,
 		arg.Name,
 		arg.Link,
-		arg.Price,
+		arg.TargetAmount,
+		arg.CollectedAmount,
 		arg.ContractAddress,
 		arg.JettonAddress,
 		arg.EventID,
@@ -105,13 +126,14 @@ func (q *Queries) CreateGift(ctx context.Context, arg CreateGiftParams) (Gift, e
 		&i.ID,
 		&i.Name,
 		&i.Link,
-		&i.Price,
+		&i.TargetAmount,
 		&i.Status,
 		&i.ContractAddress,
 		&i.JettonAddress,
 		&i.EventID,
 		&i.RecipientID,
 		&i.AdminID,
+		&i.CollectedAmount,
 	)
 	return i, err
 }
@@ -210,8 +232,46 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 	return i, err
 }
 
+const decreaseCollectedAmount = `-- name: DecreaseCollectedAmount :exec
+update Gifts
+set collected_amount = collected_amount - $1
+where contract_address = $2
+`
+
+type DecreaseCollectedAmountParams struct {
+	CollectedAmount pgtype.Int8
+	ContractAddress pgtype.Text
+}
+
+func (q *Queries) DecreaseCollectedAmount(ctx context.Context, arg DecreaseCollectedAmountParams) error {
+	_, err := q.db.Exec(ctx, decreaseCollectedAmount, arg.CollectedAmount, arg.ContractAddress)
+	return err
+}
+
+const deleteParticipantGift = `-- name: DeleteParticipantGift :exec
+delete
+from participant_gift
+    using participants, users, gifts
+where participant_gift.participant_id = participants.id
+  and participants.user_id = users.id
+  and participant_gift.gift_id = gifts.id
+  and gifts.contract_address = $1
+  and users.wallet_address = $2
+`
+
+type DeleteParticipantGiftParams struct {
+	ContractAddress pgtype.Text
+	WalletAddress   pgtype.Text
+}
+
+func (q *Queries) DeleteParticipantGift(ctx context.Context, arg DeleteParticipantGiftParams) error {
+	_, err := q.db.Exec(ctx, deleteParticipantGift, arg.ContractAddress, arg.WalletAddress)
+	return err
+}
+
 const getAllActiveGiftsAddresses = `-- name: GetAllActiveGiftsAddresses :many
-select contract_address from Gifts
+select contract_address
+from Gifts
 where status = 'active'
 `
 
@@ -236,8 +296,9 @@ func (q *Queries) GetAllActiveGiftsAddresses(ctx context.Context) ([]pgtype.Text
 }
 
 const getAllParticipantsOfGift = `-- name: GetAllParticipantsOfGift :many
-select id, role, user_id, event_id, is_paid, amount, transaction_hash, participant_id, gift_id from Participants
-inner join Participant_gift as pg on Participants.id = pg.participant_id
+select id, role, user_id, event_id, is_paid, amount, transaction_hash, participant_id, gift_id
+from Participants
+         inner join Participant_gift as pg on Participants.id = pg.participant_id
 where pg.gift_id = $1
 `
 
@@ -284,7 +345,8 @@ func (q *Queries) GetAllParticipantsOfGift(ctx context.Context, giftID int32) ([
 }
 
 const getGiftByContract = `-- name: GetGiftByContract :one
-select id, name, link, price, status, contract_address, jetton_address, event_id, recipient_id, admin_id from Gifts
+select id, name, link, target_amount, status, contract_address, jetton_address, event_id, recipient_id, admin_id, collected_amount
+from Gifts
 where Gifts.contract_address = $1
 limit 1
 `
@@ -296,40 +358,76 @@ func (q *Queries) GetGiftByContract(ctx context.Context, contractAddress pgtype.
 		&i.ID,
 		&i.Name,
 		&i.Link,
-		&i.Price,
+		&i.TargetAmount,
 		&i.Status,
 		&i.ContractAddress,
 		&i.JettonAddress,
 		&i.EventID,
 		&i.RecipientID,
 		&i.AdminID,
+		&i.CollectedAmount,
 	)
 	return i, err
 }
 
-const getUserByWallet = `-- name: GetUserByWallet :one
-select id from Users
-where wallet_address = $1
-limit 1
+const increaseCollectedAmount = `-- name: IncreaseCollectedAmount :exec
+update Gifts
+set collected_amount = collected_amount - $1
+where contract_address = $2
 `
 
-func (q *Queries) GetUserByWallet(ctx context.Context, walletAddress pgtype.Text) (int64, error) {
-	row := q.db.QueryRow(ctx, getUserByWallet, walletAddress)
-	var id int64
-	err := row.Scan(&id)
-	return id, err
+type IncreaseCollectedAmountParams struct {
+	CollectedAmount pgtype.Int8
+	ContractAddress pgtype.Text
 }
 
-const isActiveGiftByContract = `-- name: IsActiveGiftByContract :one
-select exists(
-    select 1 from Gifts
-    where contract_address = $1 and status = 'active'
-)
+func (q *Queries) IncreaseCollectedAmount(ctx context.Context, arg IncreaseCollectedAmountParams) error {
+	_, err := q.db.Exec(ctx, increaseCollectedAmount, arg.CollectedAmount, arg.ContractAddress)
+	return err
+}
+
+const isActiveGift = `-- name: IsActiveGift :one
+select exists(select 1
+              from Gifts
+              where contract_address = $1
+                and status = 'active')
 `
 
-func (q *Queries) IsActiveGiftByContract(ctx context.Context, contractAddress pgtype.Text) (bool, error) {
-	row := q.db.QueryRow(ctx, isActiveGiftByContract, contractAddress)
+func (q *Queries) IsActiveGift(ctx context.Context, contractAddress pgtype.Text) (bool, error) {
+	row := q.db.QueryRow(ctx, isActiveGift, contractAddress)
 	var exists bool
 	err := row.Scan(&exists)
 	return exists, err
+}
+
+const recordTransfer = `-- name: RecordTransfer :exec
+insert into participant_gift (participant_id, gift_id, amount, transaction_hash, is_paid)
+values ((select participants.id
+         from participants
+                  join users on participants.user_id = users.id
+         where users.wallet_address = $1
+           and participants.event_id = (select event_id
+                                        from gifts
+                                        where gifts.contract_address = $2)
+         limit 1),
+        (select id from Gifts where contract_address = $2),
+        $3, $4, true)
+on conflict (transaction_hash) do nothing
+`
+
+type RecordTransferParams struct {
+	WalletAddress   pgtype.Text
+	ContractAddress pgtype.Text
+	Amount          pgtype.Int8
+	TransactionHash pgtype.Text
+}
+
+func (q *Queries) RecordTransfer(ctx context.Context, arg RecordTransferParams) error {
+	_, err := q.db.Exec(ctx, recordTransfer,
+		arg.WalletAddress,
+		arg.ContractAddress,
+		arg.Amount,
+		arg.TransactionHash,
+	)
+	return err
 }

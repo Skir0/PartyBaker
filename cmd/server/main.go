@@ -13,6 +13,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
+	"github.com/xssnick/tonutils-go/tlb"
 )
 
 var repo *repository.Repository
@@ -59,8 +60,11 @@ func main() {
 	status1, _ := core.GetStatus(ctx, api, core.GIFT_WALLET_CONTRACT_ADRESS)
 	fmt.Println("Status at start", status1, time.Now())
 	time.Sleep(10 * time.Second)
-	str, err := core.SendCancelGift(ctx, api, os.Getenv("SEED"), core.GIFT_WALLET_CONTRACT_ADRESS)
+	// str, err := core.SendCancelGift(ctx, api, os.Getenv("SEED"), core.GIFT_WALLET_CONTRACT_ADRESS)
 	// str, err := core.SendTestActiveGift(ctx, api, os.Getenv("SEED"), core.GIFT_WALLET_CONTRACT_ADRESS)
+	coins, _ := tlb.FromNanoTONStr("5000000")
+	str, err := core.SendChangeTargetAmount(ctx, api, os.Getenv("SEED"), core.GIFT_WALLET_CONTRACT_ADRESS,
+		coins)
 
 	if err != nil {
 		return

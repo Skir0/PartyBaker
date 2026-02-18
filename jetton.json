@@ -1,0 +1,7 @@
+{
+  "name": "My Tolk Jetton",
+  "symbol": "TOLK",
+  "description": "Jetton example deployed from a Tolk + Blueprint guide repo",
+  "decimals": 9,
+  "image": "https://example.com/logo.png"
+}

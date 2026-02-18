@@ -13,7 +13,6 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
-	"github.com/xssnick/tonutils-go/tlb"
 )
 
 var repo *repository.Repository
@@ -57,22 +56,28 @@ func main() {
 		worker.Run(ctx)
 	}()
 	fmt.Println("Server is running. Press Ctrl+C to stop.")
-	status1, _ := core.GetStatus(ctx, api, core.GIFT_WALLET_CONTRACT_ADRESS)
-	fmt.Println("Status at start", status1, time.Now())
-	time.Sleep(10 * time.Second)
+	// status1, _ := core.GetStatus(ctx, api, core.GIFT_WALLET_CONTRACT_ADRESS)
+	//fmt.Println("Status at start", status1, time.Now())
+	//time.Sleep(10 * time.Second)
 	// str, err := core.SendCancelGift(ctx, api, os.Getenv("SEED"), core.GIFT_WALLET_CONTRACT_ADRESS)
 	// str, err := core.SendTestActiveGift(ctx, api, os.Getenv("SEED"), core.GIFT_WALLET_CONTRACT_ADRESS)
-	coins, _ := tlb.FromNanoTONStr("5000000")
-	str, err := core.SendChangeTargetAmount(ctx, api, os.Getenv("SEED"), core.GIFT_WALLET_CONTRACT_ADRESS,
-		coins)
+	//coins, _ := tlb.FromNanoTONStr("5000000")
+	//str, err := core.SendChangeTargetAmount(ctx, api, os.Getenv("SEED"), core.GIFT_WALLET_CONTRACT_ADRESS,
+	//	coins)
 
+	tx, err := core.SendJettonTransfer(ctx, api, core.ACCEPTED_MINTER_COOKIE_ADDRESS, core.GIFT_WALLET_CONTRACT_ADRESS, os.Getenv("SEED"))
+
+	if err != nil {
+		fmt.Println("Error sending transaction:", err)
+	}
+	fmt.Println("Transaction sent:", tx.EndStatus)
 	if err != nil {
 		return
 	}
-	fmt.Println(str, time.Now())
-	time.Sleep(10 * time.Second)
-	status2, _ := core.GetStatus(ctx, api, core.GIFT_WALLET_CONTRACT_ADRESS)
-	fmt.Println("Status at end", status2, time.Now())
+	// fmt.Println(str, time.Now())
+	// time.Sleep(10 * time.Second)
+	// status2, _ := core.GetStatus(ctx, api, core.GIFT_WALLET_CONTRACT_ADRESS)
+	// fmt.Println("Status at end", status2, time.Now())
 
 	// Создаем канал для прослушивания сигналов ОС
 	quit := make(chan os.Signal, 1)

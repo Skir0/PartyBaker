@@ -281,6 +281,7 @@ func SendReturnAmount(ctx context.Context, api ton.APIClientWrapped,
 func SendJettonTransfer(ctx context.Context, api ton.APIClientWrapped, minterAddress *address.Address,
 	targetAddress *address.Address, seed string) (*tlb.Transaction, error) {
 
+	fmt.Println("Sending jetton transfer")
 	w, err := getWalletBySeedPhrase(seed, api)
 	if err != nil {
 		return nil, err
@@ -293,21 +294,21 @@ func SendJettonTransfer(ctx context.Context, api ton.APIClientWrapped, minterAdd
 	}
 
 	// 1. Сумма USDT (6 знаков)
-	amountUSDT := tlb.MustFromDecimal("0.5", 6) // 0.5 USDT
+	jettonAmount := tlb.MustFromDecimal("1", 9) // 0.5 USDT
 
 	// 2. Сумма уведомления для контракта (9 знаков!)
 	// Это те деньги, которые придут вашему контракту GiftWallet вместе с уведомлением
-	forwardAmount := tlb.MustFromTON("0.02")
+	forwardAmount := tlb.MustFromTON("0.04")
 
 	// 3. Общая сумма TON на всю операцию (9 знаков!)
 	// Должна быть больше чем forwardAmount + комиссии (~0.05-0.1 TON)
-	totalTonGas := tlb.MustFromTON("0.07")
+	totalTonGas := tlb.MustFromTON("0.1")
 
 	comment, _ := wallet.CreateCommentCell("hello")
 
 	// responseAddress ставим w.WalletAddress(), чтобы сдача вернулась нам
 	transferPayload, err := jetton.BuildTransferPayload(targetAddress, w.WalletAddress(),
-		amountUSDT, forwardAmount, comment, nil)
+		jettonAmount, forwardAmount, comment, nil)
 	if err != nil {
 		return nil, err
 	}

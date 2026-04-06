@@ -1,4 +1,4 @@
-package core
+package blockchain
 
 import (
 	"context"
@@ -94,7 +94,7 @@ func GetData(ctx context.Context, api ton.APIClientWrapped,
 	contractAddress *address.Address) (*GiftWallet, error) {
 
 	res, err := getResultByMethodStr(ctx, api,
-		contractAddress, "get_target_amount")
+		contractAddress, "get_wallet_data")
 	if err != nil {
 		return nil, err
 	}
@@ -293,14 +293,13 @@ func SendJettonTransfer(ctx context.Context, api ton.APIClientWrapped, minterAdd
 		return nil, fmt.Errorf("failed to get jetton wallet: %w", err)
 	}
 
-	// 1. Сумма USDT (6 знаков)
-	jettonAmount := tlb.MustFromDecimal("1", 9) // 0.5 USDT
+	jettonAmount := tlb.MustFromDecimal("1", 9)
 
-	// 2. Сумма уведомления для контракта (9 знаков!)
+	// Сумма уведомления для контракта (9 знаков!)
 	// Это те деньги, которые придут вашему контракту GiftWallet вместе с уведомлением
 	forwardAmount := tlb.MustFromTON("0.04")
 
-	// 3. Общая сумма TON на всю операцию (9 знаков!)
+	// Общая сумма TON на всю операцию (9 знаков!)
 	// Должна быть больше чем forwardAmount + комиссии (~0.05-0.1 TON)
 	totalTonGas := tlb.MustFromTON("0.1")
 

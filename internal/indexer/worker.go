@@ -1,7 +1,7 @@
 package indexer
 
 import (
-	"PartyBaker/internal/core"
+	"PartyBaker/internal/blockchain"
 	"PartyBaker/internal/repository"
 	"context"
 	"fmt"
@@ -12,6 +12,7 @@ import (
 	"github.com/xssnick/tonutils-go/address"
 	"github.com/xssnick/tonutils-go/tlb"
 	"github.com/xssnick/tonutils-go/ton"
+	"github.com/xssnick/tonutils-go/ton/jetton"
 )
 
 type Worker struct {
@@ -34,6 +35,12 @@ func (worker *Worker) UpdateCache(ctx context.Context) {
 		parsedAddr, err := address.ParseAddr(addr.String)
 		log.Println("pgtype:", addr)
 		log.Println("CACHE:", parsedAddr.StringRaw())
+
+		tokenClient := jetton.NewJettonMasterClient(worker.api, blockchain.ACCEPTED_MINTER_COOKIE_ADDRESS)
+
+		jwAddress, err := tokenClient.GetJettonWallet(ctx, parsedAddr)
+
+		fmt.Println("jwAddress:", jwAddress.Address())
 
 		if err != nil {
 			continue
@@ -83,8 +90,8 @@ func getAmountFromOutMsg(transaction *tlb.Transaction) (pgtype.Int8, error) {
 		if err != nil {
 			continue
 		}
-		if uint32(op) == core.ASK_TO_TRANSFER {
-			askToTransfer := &core.AskToTransfer{}
+		if uint32(op) == blockchain.ASK_TO_TRANSFER {
+			askToTransfer := &blockchain.AskToTransfer{}
 			err := tlb.LoadFromCell(askToTransfer, outBodySlice)
 			if err != nil {
 				continue
@@ -113,8 +120,8 @@ func (worker *Worker) processTransaction(transaction *tlb.Transaction, ctx conte
 	}
 
 	switch uint32(op) {
-	case core.TRANSFER_NOTIFICATION:
-		transferNotification := &core.TransferNotification{}
+	case blockchain.TRANSFER_NOTIFICATION:
+		transferNotification := &blockchain.TransferNotification{}
 		err = tlb.LoadFromCell(transferNotification, body)
 		if err != nil {
 			return err
@@ -133,7 +140,7 @@ func (worker *Worker) processTransaction(transaction *tlb.Transaction, ctx conte
 			return err
 		}
 
-	case core.CANCEL_GIFT:
+	case blockchain.CANCEL_GIFT:
 		err := worker.repo.CancelGift(ctx, contractAddress)
 		if err != nil {
 			log.Println("DB Error on cancel:", err)
@@ -141,7 +148,7 @@ func (worker *Worker) processTransaction(transaction *tlb.Transaction, ctx conte
 			fmt.Println("SUCCESS: Gift marked as cancelled in DB")
 		}
 
-	case core.RETURN_AMOUNT:
+	case blockchain.RETURN_AMOUNT:
 
 		amountToReturn, err := getAmountFromOutMsg(transaction)
 		if err != nil {
@@ -158,7 +165,7 @@ func (worker *Worker) processTransaction(transaction *tlb.Transaction, ctx conte
 			fmt.Println("SUCCESS: Gift marked as returning amount")
 		}
 
-	case core.CHANGE_ADMIN:
+	case blockchain.CHANGE_ADMIN:
 		newAdminAddress, _ := body.LoadAddr()
 		err := worker.repo.ChangeAdmin(ctx, contractAddress,
 			parseBytesToText(newAdminAddress.Data()))
@@ -169,7 +176,7 @@ func (worker *Worker) processTransaction(transaction *tlb.Transaction, ctx conte
 			fmt.Println("SUCCESS: Gift changed it's admin")
 		}
 
-	case core.CHANGE_TARGET:
+	case blockchain.CHANGE_TARGET:
 		newTargetAmount, _ := body.LoadBigCoins()
 		err := worker.repo.ChangeTargetAmount(ctx, contractAddress,
 			parseCoinsToInt8(newTargetAmount))
@@ -315,18 +322,24 @@ func (worker *Worker) Run(ctx context.Context) {
 					}
 					fmt.Printf("!!! Найдена транзакция с активным подакром на наш контракт: %s\n", addr.StringRaw())
 					tx, err := worker.api.GetTransaction(ctx, shard, addr, id.LT)
+					fmt.Println("from gift jetton wallet address: ", tx.IO.In.AsInternal().SrcAddr)
+
 					if err != nil {
 						log.Println("get tx data err:", err.Error())
 						continue
 					}
 					desc, ok := tx.Description.(tlb.TransactionDescriptionOrdinary)
 					if !ok {
+						fmt.Println("continue mode -- skip")
 						continue // Это не обычная транзакция (например, системная), пропускаем
 					}
 					// 2. Проверяем фазу вычислений (Compute Phase)
 					// Если фазы нет или она была пропущена (skipped) - значит код не выполнялся
 					if desc.ComputePhase.Phase == nil ||
-						desc.Aborted || desc.Destroyed {
+						desc.Aborted ||
+						desc.Destroyed {
+						fmt.Println("phase mode -- skip")
+						fmt.Println(desc.Aborted, desc.Destroyed)
 						continue
 					}
 					err = worker.processTransaction(tx, ctx,

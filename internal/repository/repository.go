@@ -2,6 +2,7 @@ package repository
 
 import (
 	"PartyBaker/internal/db"
+
 	"context"
 	"fmt"
 	"log"
@@ -36,12 +37,38 @@ func (r *Repository) CancelGift(ctx context.Context, giftContractAddress pgtype.
 	return nil
 }
 
+func (r *Repository) CreateEvent(ctx context.Context, params db.CreateEventParams) error {
+	_, err := r.query.CreateEvent(ctx, params)
+	if err != nil {
+		return fmt.Errorf("database error: %w", err)
+	}
+	return nil
+
+}
+
 func (r *Repository) GetAllActiveGiftsAddresses(ctx context.Context) ([]pgtype.Text, error) {
 	slice, err := r.query.GetAllActiveGiftsAddresses(ctx)
+
 	if err != nil {
 		return nil, err
 	}
 	return slice, nil
+}
+
+func (r *Repository) GetGifts(ctx context.Context) ([]db.Gift, error) {
+	slice, err := r.query.GetGifts(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return slice, nil
+}
+
+func (r *Repository) GetUserBasicInfo(ctx context.Context, id int64) (db.GetUserBasicInfoRow, error) {
+	userInfo, err := r.query.GetUserBasicInfo(ctx, id)
+	if err != nil {
+		return db.GetUserBasicInfoRow{}, err
+	}
+	return userInfo, nil
 }
 
 func (r *Repository) ChangeAdmin(ctx context.Context, giftContractAddress pgtype.Text,

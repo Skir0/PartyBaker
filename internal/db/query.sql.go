@@ -370,6 +370,62 @@ func (q *Queries) GetGiftByContract(ctx context.Context, contractAddress pgtype.
 	return i, err
 }
 
+const getGifts = `-- name: GetGifts :many
+select id, name, link, target_amount, status, contract_address, jetton_address, event_id, recipient_id, admin_id, collected_amount from Gifts
+`
+
+func (q *Queries) GetGifts(ctx context.Context) ([]Gift, error) {
+	rows, err := q.db.Query(ctx, getGifts)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Gift
+	for rows.Next() {
+		var i Gift
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Link,
+			&i.TargetAmount,
+			&i.Status,
+			&i.ContractAddress,
+			&i.JettonAddress,
+			&i.EventID,
+			&i.RecipientID,
+			&i.AdminID,
+			&i.CollectedAmount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getUserBasicInfo = `-- name: GetUserBasicInfo :one
+select first_name, last_name, username
+from users
+where id = $1
+limit 1
+`
+
+type GetUserBasicInfoRow struct {
+	FirstName pgtype.Text
+	LastName  pgtype.Text
+	Username  pgtype.Text
+}
+
+func (q *Queries) GetUserBasicInfo(ctx context.Context, id int64) (GetUserBasicInfoRow, error) {
+	row := q.db.QueryRow(ctx, getUserBasicInfo, id)
+	var i GetUserBasicInfoRow
+	err := row.Scan(&i.FirstName, &i.LastName, &i.Username)
+	return i, err
+}
+
 const increaseCollectedAmount = `-- name: IncreaseCollectedAmount :exec
 update Gifts
 set collected_amount = collected_amount - $1

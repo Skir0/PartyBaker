@@ -1,4 +1,4 @@
-package core
+package blockchain
 
 import (
 	"context"
@@ -16,6 +16,7 @@ func InitAPI(ctx context.Context, config string) (ton.APIClientWrapped, error) {
 	// подхватываем списоск lite servers
 	cfg, err := liteclient.GetConfigFromUrl(context.Background(), config)
 	err = client.AddConnectionsFromConfigUrl(ctx, config)
+
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -24,7 +25,7 @@ func InitAPI(ctx context.Context, config string) (ton.APIClientWrapped, error) {
 	api.SetTrustedBlockFromConfig(cfg)
 
 	// api который реализует высокоуровневые методы, работает быстро,
-	//Api = core.NewAPIClient(client)
+	//Api = blockchain.NewAPIClient(client)
 	//
 	//// автоматически повторяет запросы при временных ошибках.
 	//Api = Api.WithRetry(3)

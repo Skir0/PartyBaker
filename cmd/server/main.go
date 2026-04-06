@@ -1,11 +1,14 @@
 package main
 
 import (
-	"PartyBaker/internal/core"
+	"PartyBaker/internal/api"
+	"PartyBaker/internal/blockchain"
 	"PartyBaker/internal/indexer"
 	"PartyBaker/internal/repository"
 	"context"
 	"fmt"
+	"log"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -13,19 +16,35 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
+	"github.com/xssnick/tonutils-go/address"
+	"github.com/xssnick/tonutils-go/ton"
+	"github.com/xssnick/tonutils-go/ton/jetton"
 )
 
 var repo *repository.Repository
 
-func main() {
+func GetUserWallet(api ton.APIClientWrapped) {
+	ctx := context.Background()
+	// 1. Адрес Мастера токена COOKIE
+	masterAddr := address.MustParseAddr("kQBSn8MNUxBnYx2Yj5xjJh9Xk9UU9eqLs4gYPzIgnnkLQ1W_")
+	// 2. Адрес владельца (админ из вашего примера)
+	// ownerAddr := address.MustParseAddr("0QBnp25bT_Taj8juEslO0zaHDwLTyIGJq72SFurXwy2pJVh4")
 
-	//s := "kQC54WrttsCmxNgJMEFfof8RF4S8wjVwT4Egee2yDaEtlKF5"
-	//addr := address.NewAddress(0, 0, []byte(s))
-	//fmt.Println(addr.StringRaw())
-	//fmt.Println(pgtype.Text{
-	//	String: s,
-	//	Valid:  true,
-	//})
+	// 3. Создаем клиент для работы с Jetton
+	// api — это ваш инициализированный ton.APIClientWrapped
+	tokenClient := jetton.NewJettonMasterClient(api, masterAddr)
+
+	// 4. Запрашиваем адрес кошелька
+	jwAddress, err := tokenClient.GetJettonWallet(ctx, blockchain.GIFT_WALLET_CONTRACT_ADRESS)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("Jetton Wallet Address 1:", jwAddress.Address().StringRaw())
+	fmt.Println("Jetton Wallet Address original:", address.MustParseAddr("kQDPI6jHrBVjh_y01BSXgDF5bHPYworVuyk1A3pedFgwfszE").StringRaw())
+
+}
+func main() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel() // Остановит всё при выходе из main
@@ -44,40 +63,32 @@ func main() {
 
 	fmt.Println("Initializing repository...")
 
-	api, err := core.InitAPI(ctx, os.Getenv("TESTNET_TON_CONFIG"))
+	blockchainApi, err := blockchain.InitAPI(ctx, os.Getenv("TESTNET_TON_CONFIG"))
 	if err != nil {
 		fmt.Println("Error initializing client API:", err)
 	}
 	fmt.Println("Initializing client API...")
 
-	worker := indexer.NewWorker(repo, api)
+	// GetUserWallet(blockchainApi)
+
+	worker := indexer.NewWorker(repo, blockchainApi)
 	go func() {
 		fmt.Println("Starting indexer...")
 		worker.Run(ctx)
 	}()
 	fmt.Println("Server is running. Press Ctrl+C to stop.")
-	// status1, _ := core.GetStatus(ctx, api, core.GIFT_WALLET_CONTRACT_ADRESS)
-	//fmt.Println("Status at start", status1, time.Now())
-	//time.Sleep(10 * time.Second)
-	// str, err := core.SendCancelGift(ctx, api, os.Getenv("SEED"), core.GIFT_WALLET_CONTRACT_ADRESS)
-	// str, err := core.SendTestActiveGift(ctx, api, os.Getenv("SEED"), core.GIFT_WALLET_CONTRACT_ADRESS)
-	//coins, _ := tlb.FromNanoTONStr("5000000")
-	//str, err := core.SendChangeTargetAmount(ctx, api, os.Getenv("SEED"), core.GIFT_WALLET_CONTRACT_ADRESS,
-	//	coins)
 
-	tx, err := core.SendJettonTransfer(ctx, api, core.ACCEPTED_MINTER_COOKIE_ADDRESS, core.GIFT_WALLET_CONTRACT_ADRESS, os.Getenv("SEED"))
+	// Создаем хендлер и роутер
+	h := api.NewHandler(repo, blockchainApi, os.Getenv("BOT_TOKEN"))
+	router := api.NewRouter(h)
 
+	fmt.Println("🚀 API Server starting on http://127.0.0.1:8080")
+
+	// ВАЖНО: ListenAndServe блокирует поток. Код после него не выполнится.
+	err = http.ListenAndServe(":8080", router)
 	if err != nil {
-		fmt.Println("Error sending transaction:", err)
+		log.Fatal("ListenAndServe Error: ", err)
 	}
-	fmt.Println("Transaction sent:", tx.EndStatus)
-	if err != nil {
-		return
-	}
-	// fmt.Println(str, time.Now())
-	// time.Sleep(10 * time.Second)
-	// status2, _ := core.GetStatus(ctx, api, core.GIFT_WALLET_CONTRACT_ADRESS)
-	// fmt.Println("Status at end", status2, time.Now())
 
 	// Создаем канал для прослушивания сигналов ОС
 	quit := make(chan os.Signal, 1)

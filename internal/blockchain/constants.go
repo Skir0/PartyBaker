@@ -1,8 +1,8 @@
-package core
+package blockchain
 
 import "github.com/xssnick/tonutils-go/address"
 
-var GIFT_WALLET_CONTRACT_ADRESS = address.MustParseAddr("kQAIhkQjIX9Q6oVt7rrewIeRJvVDmHg_a8nT_ladybHU1M_3")
+var GIFT_WALLET_CONTRACT_ADRESS = address.MustParseAddr("kQA0eQy_ftxXwBwGdFqvWuMJu2TW2udxS535RZ1S6Aee1Cid")
 var ACCEPTED_MINTER_USDT_ADDRESS = address.MustParseAddr("EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs")
 var ACCEPTED_MINTER_COOKIE_ADDRESS = address.MustParseAddr("kQBSn8MNUxBnYx2Yj5xjJh9Xk9UU9eqLs4gYPzIgnnkLQ1W_")
 

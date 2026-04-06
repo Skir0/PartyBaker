@@ -33,6 +33,9 @@ select contract_address
 from Gifts
 where status = 'active';
 
+-- name: GetGifts :many
+select * from Gifts;
+
 -- name: GetAllParticipantsOfGift :many
 select *
 from Participants
@@ -43,6 +46,12 @@ where pg.gift_id = $1;
 select *
 from Gifts
 where Gifts.contract_address = $1
+limit 1;
+
+-- name: GetUserBasicInfo :one
+select first_name, last_name, username
+from users
+where id = $1
 limit 1;
 
 -- name: IsActiveGift :one

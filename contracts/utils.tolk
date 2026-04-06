@@ -1,5 +1,3 @@
-import "storage"
-
 struct JettonWalletData {
     balance: coins
     owner: address
@@ -8,22 +6,23 @@ struct JettonWalletData {
 }
 
 fun calcDeployedJettonWallet(ownerAddress: address, minterAddress: address, walletCode: cell): AutoDeployAddress {
-    val standardWalletData: JettonWalletData = {
-        balance: 0,
-        owner: ownerAddress,
-        minter: minterAddress,
-        code: walletCode
-    };
+    val data = beginCell()
+        .storeUint(0, 4)              // coins(0) = ровно 4 нулевых бита
+        .storeAddress(ownerAddress)
+        .storeAddress(minterAddress)
+        .storeRef(walletCode)
+        .endCell();
 
     return {
         workchain: 0,
         stateInit: {
             code: walletCode,
-            data: standardWalletData.toCell()
+            data: data
         }
     };
 }
-fun calcAddressOfJettonWallet(ownerAddress: address, minterAddress: address, jettonWalletCode: cell) {
+
+fun calcAddressOfJettonWallet(ownerAddress: address, minterAddress: address, jettonWalletCode: cell): address {
     val jwDeployed = calcDeployedJettonWallet(ownerAddress, minterAddress, jettonWalletCode);
-    return jwDeployed.calculateAddress()
+    return jwDeployed.calculateAddress();
 }

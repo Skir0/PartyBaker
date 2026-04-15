@@ -39,6 +39,7 @@ func (r *Repository) CancelGift(ctx context.Context, giftContractAddress pgtype.
 
 func (r *Repository) CreateEvent(ctx context.Context, params db.CreateEventParams) error {
 	_, err := r.query.CreateEvent(ctx, params)
+	fmt.Println("inside repo CreateEvent:", params)
 	if err != nil {
 		return fmt.Errorf("database error: %w", err)
 	}

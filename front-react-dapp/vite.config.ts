@@ -5,13 +5,18 @@ import { nodePolyfills } from 'vite-plugin-node-polyfills'
 export default defineConfig({
     plugins: [
         react(),
-        nodePolyfills(),
+        // Это единственный плагин для полифиллов, который тебе нужен
+        nodePolyfills({
+            // В новых версиях плагина это делается так:
+            include: ['buffer', 'process'],
+            globals: {
+                Buffer: true,
+                process: true,
+            },
+        }),
     ],
     server: {
-        // 1. Разрешаем Ngrok
         allowedHosts: true,
-
-        // 2. Настраиваем прокси
         proxy: {
             // Все запросы, начинающиеся с /api, пойдут на Go
             '/api': {
@@ -25,5 +30,8 @@ export default defineConfig({
                 changeOrigin: true,
             }
         }
-    }
+    },
 })
+
+
+

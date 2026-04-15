@@ -38,6 +38,7 @@ func (h *Handler) GetGifts(writer http.ResponseWriter, request *http.Request) {
 
 	gifts, err := h.repo.GetGifts(request.Context())
 	if err != nil {
+		fmt.Errorf(err.Error())
 		writer.WriteHeader(http.StatusInternalServerError)
 	}
 
@@ -55,7 +56,10 @@ func (h *Handler) CreateEvent(writer http.ResponseWriter, request *http.Request)
 
 	eventInfo := &CreateEventRequest{}
 	err := json.NewDecoder(request.Body).Decode(eventInfo)
+	fmt.Println("eventInfo:", eventInfo)
+
 	if err != nil {
+		fmt.Println(err)
 		writer.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -66,12 +70,21 @@ func (h *Handler) CreateEvent(writer http.ResponseWriter, request *http.Request)
 		writer.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+
 	eventParams, err := ConvertEventToParams(eventInfo)
+	if err != nil {
+		fmt.Println(err)
+		writer.WriteHeader(http.StatusBadRequest)
+	}
 	err = h.repo.CreateEvent(request.Context(), eventParams)
 	if err != nil {
+		fmt.Println(err)
+		writer.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	writer.WriteHeader(http.StatusCreated)
+	err = json.NewEncoder(writer).Encode("success")
+
 }
 
 func (h *Handler) GetGiftDetails(writer http.ResponseWriter, request *http.Request) {

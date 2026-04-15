@@ -14,16 +14,17 @@ func formatInt8(num pgtype.Int8) string {
 	if !num.Valid {
 		return "0.00"
 	}
-	val := float64(num.Int64) / 1_000_000
+	val := float64(num.Int64) / 1_000_000.0
 	return fmt.Sprintf("%.2f", val)
 }
 
 func parseJsonDate(dateStr string, check time.Time) (pgtype.Timestamptz, error) {
 
-	date, _ := time.Parse("yyyy-mm-dd", dateStr)
-	if date.After(check) {
+	date, _ := time.Parse("2006-01-02", dateStr)
+	if date.Before(check) {
 		return pgtype.Timestamptz{}, errors.New("date out of range")
 	}
+
 	return pgtype.Timestamptz{
 		Time:  date,
 		Valid: true,
@@ -60,6 +61,7 @@ type CreateEventRequest struct {
 	Name     string `json:"name"`
 	Date     string `json:"date"`
 	Deadline string `json:"deadline"`
+	AdminId  int32  `json:"admin_id"`
 }
 
 func ConvertGiftsToResponses(gifts []db.Gift, currentUserID int64) []GiftResponse {
@@ -86,8 +88,9 @@ func ConvertGiftsToResponses(gifts []db.Gift, currentUserID int64) []GiftRespons
 			Progress:        progress,
 			ContractAddress: gift.ContractAddress.String,
 			Status:          gift.Status,
-			RecipientName:   "",
-			IsAdmin:         int64(gift.AdminID) == currentUserID,
+			// test
+			RecipientName: "",
+			IsAdmin:       int64(gift.AdminID) == currentUserID,
 		}
 	}
 	return giftResponses
@@ -95,17 +98,31 @@ func ConvertGiftsToResponses(gifts []db.Gift, currentUserID int64) []GiftRespons
 }
 
 func ConvertEventToParams(event *CreateEventRequest) (db.CreateEventParams, error) {
+	fmt.Println("inside ConvertEventToParams")
 	if event.Name == "" {
 		return db.CreateEventParams{}, errors.New("event name is required")
 	}
+
 	date, err := parseJsonDate(event.Date, time.Now())
 	if err != nil {
 		return db.CreateEventParams{}, err
 	}
+
 	deadline, err := parseJsonDate(event.Deadline, time.Now())
 	if err != nil {
 		return db.CreateEventParams{}, err
 	}
+
+	fmt.Println(db.CreateEventParams{
+		Name: pgtype.Text{
+			String: event.Name,
+			Valid:  true,
+		},
+		Date:     date,
+		Deadline: deadline,
+		// for test, in general we have to use user profile
+		AdminID: event.AdminId})
+
 	return db.CreateEventParams{
 		Name: pgtype.Text{
 			String: event.Name,
@@ -113,5 +130,7 @@ func ConvertEventToParams(event *CreateEventRequest) (db.CreateEventParams, erro
 		},
 		Date:     date,
 		Deadline: deadline,
+		// for test, in general we have to use user profile
+		AdminID: event.AdminId,
 	}, nil
 }

@@ -1,4 +1,5 @@
 import apiClient from './apiClient.ts';
+import type { CreateEventRequest } from './requests.ts';
 
 export const healthCheck = async () => {
 
@@ -16,5 +17,11 @@ export const getGifts = async () => {
 export const getUserProfile = async () => {
 
     const response = await apiClient.get('/api/user/me');
+    return response.data;
+}
+
+export const createEvent = async (req: CreateEventRequest) => {
+
+    const response = await apiClient.post('/api/events/create', req);
     return response.data;
 }

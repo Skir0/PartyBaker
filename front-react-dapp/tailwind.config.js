@@ -1,0 +1,66 @@
+export default {
+    content: [
+        "./index.html",
+        "./src/**/*.{js,ts,jsx,tsx}",
+    ],
+    theme: {
+        extend: {
+            colors: {
+                'secondary-container': '#c1dcff',
+                'outline-variant': '#c0c7d3',
+                'surface-container-lowest': '#ffffff',
+                'on-tertiary-fixed-variant': '#6b3b00',
+                'surface-container-low': '#f3f3f4',
+                'inverse-primary': '#9dcaff',
+                'on-secondary-container': '#47617f',
+                'tertiary-container': '#ad6200',
+                'on-surface-variant': '#404751',
+                'on-secondary': '#ffffff',
+                'on-error': '#ffffff',
+                'on-error-container': '#93000a',
+                'surface-container': '#eeeeef',
+                'surface-container-high': '#e8e8e9',
+                'on-primary-fixed-variant': '#00497b',
+                'inverse-on-surface': '#f0f1f2',
+                'primary-container': '#1278c3',
+                'on-background': '#1a1c1d',
+                'primary-fixed': '#d1e4ff',
+                'on-tertiary-container': '#fffbff',
+                'inverse-surface': '#2f3132',
+                'error-container': '#ffdad6',
+                'on-tertiary': '#ffffff',
+                'outline': '#707882',
+                'surface-container-highest': '#e2e2e3',
+                'secondary-fixed': '#d1e4ff',
+                'secondary-fixed-dim': '#aec9eb',
+                'surface-bright': '#f9f9fa',
+                'tertiary': '#894d00',
+                'background': '#f9f9fa',
+                'on-tertiary-fixed': '#2d1600',
+                'on-primary-fixed': '#001d35',
+                'on-primary-container': '#fdfcff',
+                'surface-dim': '#dadadb',
+                'surface-tint': '#0062a1',
+                'tertiary-fixed-dim': '#ffb875',
+                'on-secondary-fixed-variant': '#2e4965',
+                'primary': '#005f9e',
+                'surface': '#f9f9fa',
+                'surface-variant': '#e2e2e3',
+                'on-surface': '#1a1c1d',
+                'secondary': '#46607e',
+                'tertiary-fixed': '#ffdcc0',
+                'on-primary': '#ffffff',
+                'primary-fixed-dim': '#9dcaff',
+                'on-secondary-fixed': '#001d35',
+                'error': '#ba1a1a'
+            },
+            fontFamily: {
+                'headline': ['Inter'],
+                'body': ['Inter'],
+                'label': ['Inter']
+            },
+            borderRadius: { 'DEFAULT': '0.25rem', 'lg': '0.5rem', 'xl': '0.75rem', 'full': '9999px' }
+        }
+    },
+    plugins: []
+};

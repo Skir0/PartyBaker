@@ -3,7 +3,6 @@ package main
 import (
 	"PartyBaker/internal/api"
 	"PartyBaker/internal/blockchain"
-	"PartyBaker/internal/indexer"
 	"PartyBaker/internal/repository"
 	"context"
 	"fmt"
@@ -71,11 +70,11 @@ func main() {
 
 	// GetUserWallet(blockchainApi)
 
-	worker := indexer.NewWorker(repo, blockchainApi)
-	go func() {
-		fmt.Println("Starting indexer...")
-		worker.Run(ctx)
-	}()
+	//worker := indexer.NewWorker(repo, blockchainApi)
+	//go func() {
+	//	fmt.Println("Starting indexer...")
+	//	worker.Run(ctx)
+	//}()
 	fmt.Println("Server is running. Press Ctrl+C to stop.")
 
 	// Создаем хендлер и роутер

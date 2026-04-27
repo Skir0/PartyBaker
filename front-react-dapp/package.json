@@ -20,6 +20,8 @@
     "axios": "^1.13.6",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "react-router": "^7.14.1",
+    "react-router-dom": "^7.14.1",
     "tailwind": "^2.3.1",
     "ton": "^6.13.1",
     "vite-plugin-node-polyfills": "^0.26.0"

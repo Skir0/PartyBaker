@@ -28,10 +28,30 @@ values ($1, $2, $3, $4, $5)
 on conflict (transaction_hash) do nothing
 returning *;
 
+-- name: GetEventsInfoByUserID :many
+select
+    e.id,
+    e.name,
+    e.date,
+    e.deadline,
+    e.admin_id,
+    count(distinct p.id)::int as participants_count
+from events e
+         left join participants p on p.event_id = e.id
+where e.admin_id = $1
+   or e.id in (
+    select event_id
+    from participants
+    where user_id = $1
+)
+group by e.id, e.name, e.date, e.deadline, e.admin_id
+order by e.date asc;
+
 -- name: GetAllActiveGiftsAddresses :many
 select contract_address
 from Gifts
 where status = 'active';
+
 
 -- name: GetGifts :many
 select * from Gifts;

@@ -4,3 +4,7 @@ export interface CreateEventRequest {
     deadline: string;
     admin_id: number;
 }
+
+export interface GetEventsRequest {
+    user_id: number;
+}

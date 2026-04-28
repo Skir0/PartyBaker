@@ -127,6 +127,16 @@ func (r *Repository) ReturnAmount(ctx context.Context, giftContractAddress pgtyp
 	return nil
 }
 
+func (r *Repository) GetEventsInfoByUserId(ctx context.Context, userId int32) ([]db.GetEventsInfoByUserIDRow, error) {
+	eventsInfo, err := r.query.GetEventsInfoByUserID(ctx, userId)
+	if err != nil {
+		return nil, err
+	}
+
+	return eventsInfo, nil
+
+}
+
 func (r *Repository) ProcessTransfer(ctx context.Context, contractAddress pgtype.Text,
 	userWallerAddress pgtype.Text, transferAmount pgtype.Int8, txHash pgtype.Text) error {
 

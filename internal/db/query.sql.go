@@ -344,6 +344,62 @@ func (q *Queries) GetAllParticipantsOfGift(ctx context.Context, giftID int32) ([
 	return items, nil
 }
 
+const getEventsInfoByUserID = `-- name: GetEventsInfoByUserID :many
+select
+    e.id,
+    e.name,
+    e.date,
+    e.deadline,
+    e.admin_id,
+    count(distinct p.id)::int as participants_count
+from events e
+         left join participants p on p.event_id = e.id
+where e.admin_id = $1
+   or e.id in (
+    select event_id
+    from participants
+    where user_id = $1
+)
+group by e.id, e.name, e.date, e.deadline, e.admin_id
+order by e.date asc
+`
+
+type GetEventsInfoByUserIDRow struct {
+	ID                int32
+	Name              pgtype.Text
+	Date              pgtype.Timestamptz
+	Deadline          pgtype.Timestamptz
+	AdminID           int32
+	ParticipantsCount int32
+}
+
+func (q *Queries) GetEventsInfoByUserID(ctx context.Context, adminID int32) ([]GetEventsInfoByUserIDRow, error) {
+	rows, err := q.db.Query(ctx, getEventsInfoByUserID, adminID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetEventsInfoByUserIDRow
+	for rows.Next() {
+		var i GetEventsInfoByUserIDRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Date,
+			&i.Deadline,
+			&i.AdminID,
+			&i.ParticipantsCount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getGiftByContract = `-- name: GetGiftByContract :one
 select id, name, link, target_amount, status, contract_address, jetton_address, event_id, recipient_id, admin_id, collected_amount
 from Gifts

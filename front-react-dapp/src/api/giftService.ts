@@ -25,3 +25,10 @@ export const createEvent = async (req: CreateEventRequest) => {
     const response = await apiClient.post('/api/events/create', req);
     return response.data;
 }
+
+
+export const getEventsOfCurrentUser = async () => {
+
+    const response = await apiClient.get('/api/events/getEvents');
+    return response.data;
+}

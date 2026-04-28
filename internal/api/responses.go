@@ -2,34 +2,7 @@ package api
 
 import (
 	"PartyBaker/internal/db"
-	"errors"
-	"fmt"
-	"time"
-
-	"github.com/jackc/pgx/v5/pgtype"
 )
-
-func formatInt8(num pgtype.Int8) string {
-
-	if !num.Valid {
-		return "0.00"
-	}
-	val := float64(num.Int64) / 1_000_000.0
-	return fmt.Sprintf("%.2f", val)
-}
-
-func parseJsonDate(dateStr string, check time.Time) (pgtype.Timestamptz, error) {
-
-	date, _ := time.Parse("2006-01-02", dateStr)
-	if date.Before(check) {
-		return pgtype.Timestamptz{}, errors.New("date out of range")
-	}
-
-	return pgtype.Timestamptz{
-		Time:  date,
-		Valid: true,
-	}, nil
-}
 
 type GiftResponse struct {
 	ID          int32  `json:"id"`
@@ -51,17 +24,18 @@ type GiftResponse struct {
 	IsAdmin       bool   `json:"is_admin"`
 }
 
+type EventResponse struct {
+	ID                 int32  `json:"id"`
+	Name               string `json:"name"`
+	Date               string `json:"date"`
+	Deadline           string `json:"deadline"`
+	ParticipantsAmount int32  `json:"participants_amount"`
+}
+
 type BasicUserInfoResponse struct {
 	Username  string `json:"username"`
 	FirstName string `json:"first_name"`
 	LastName  string `json:"last_name"`
-}
-
-type CreateEventRequest struct {
-	Name     string `json:"name"`
-	Date     string `json:"date"`
-	Deadline string `json:"deadline"`
-	AdminId  int32  `json:"admin_id"`
 }
 
 func ConvertGiftsToResponses(gifts []db.Gift, currentUserID int64) []GiftResponse {
@@ -97,40 +71,17 @@ func ConvertGiftsToResponses(gifts []db.Gift, currentUserID int64) []GiftRespons
 
 }
 
-func ConvertEventToParams(event *CreateEventRequest) (db.CreateEventParams, error) {
-	fmt.Println("inside ConvertEventToParams")
-	if event.Name == "" {
-		return db.CreateEventParams{}, errors.New("event name is required")
+func ConvertEventsToResponses(events []db.GetEventsInfoByUserIDRow, currentUserID int64) []EventResponse {
+	eventResponses := make([]EventResponse, len(events))
+	for i, event := range events {
+
+		eventResponses[i] = EventResponse{
+			ID:                 event.ID,
+			Name:               event.Name.String,
+			Date:               event.Date.Time.Format("2006-01-02"),
+			Deadline:           event.Deadline.Time.Format("2006-01-02"),
+			ParticipantsAmount: event.ParticipantsCount,
+		}
 	}
-
-	date, err := parseJsonDate(event.Date, time.Now())
-	if err != nil {
-		return db.CreateEventParams{}, err
-	}
-
-	deadline, err := parseJsonDate(event.Deadline, time.Now())
-	if err != nil {
-		return db.CreateEventParams{}, err
-	}
-
-	fmt.Println(db.CreateEventParams{
-		Name: pgtype.Text{
-			String: event.Name,
-			Valid:  true,
-		},
-		Date:     date,
-		Deadline: deadline,
-		// for test, in general we have to use user profile
-		AdminID: event.AdminId})
-
-	return db.CreateEventParams{
-		Name: pgtype.Text{
-			String: event.Name,
-			Valid:  true,
-		},
-		Date:     date,
-		Deadline: deadline,
-		// for test, in general we have to use user profile
-		AdminID: event.AdminId,
-	}, nil
+	return eventResponses
 }

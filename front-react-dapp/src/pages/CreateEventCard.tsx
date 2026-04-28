@@ -7,7 +7,7 @@ import { CreateNewEventCard } from '../components/cards/CreateNewEventCard.tsx';
 export function CreateEventCard() {
     return (
         <div className="bg-background text-on-surface flex flex-col min-h-screen">
-            <HeaderBar title="Group Gift" onBack={() => console.log('Back')} onClose={() => console.log('Close')} />
+            <HeaderBar title="Group Gift" onBack={() => console.log('Back')} />
             <main className="flex-grow pt-20 px-4 pb-24 max-w-md mx-auto w-full flex flex-col">
                 <div className="mb-10 text-left">
                     <h2 className="text-3xl font-semibold text-on-surface mb-2 tracking-tight">Welcome</h2>

@@ -16,13 +16,13 @@ export interface MaterialIconProps {
 export interface TopAppBarProps {
     title: string;
     onBack: () => void;
-    onNext: () => void;
 }
 
 export interface BottomButtonProps {
     text: string;
     icon?: string;
     onClick: () => void;
+    disabled?: boolean;
 }
 
 export interface StepHeaderCardProps {
@@ -47,4 +47,23 @@ export interface DateFieldsProps {
 export interface EventFormProps {
     formData: EventFormData;
     onChange: (field: keyof EventFormData) => (e: React.ChangeEvent<HTMLInputElement>) => void;
+}
+
+export interface SummaryStatCardProps {
+    icon: string;
+    iconClassName: string;
+    label: string;
+    value: string;
+}
+
+export interface EventOverviewCardProps {
+    title: string;
+    participants: string;
+    imageUrl: string;
+    imageAlt: string;
+    status: string;
+    statusClassName: string;
+    eventDate: string;
+    deadline: string;
+    deadlineClassName?: string;
 }

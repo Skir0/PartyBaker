@@ -46,6 +46,26 @@ func (h *Handler) GetGifts(writer http.ResponseWriter, request *http.Request) {
 	json.NewEncoder(writer).Encode(response)
 }
 
+func (h *Handler) GetEventsByUserID(writer http.ResponseWriter, request *http.Request) {
+
+	currentUserID, ok := request.Context().Value(UserIDKey).(int64)
+	fmt.Println("currentUserID:", currentUserID)
+	if !ok {
+		writer.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	eventsInfo, err := h.repo.GetEventsInfoByUserId(request.Context(), int32(currentUserID))
+	if err != nil {
+		fmt.Errorf(err.Error())
+		writer.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	response := ConvertEventsToResponses(eventsInfo, currentUserID)
+	json.NewEncoder(writer).Encode(response)
+}
+
 func (h *Handler) CreateGift(writer http.ResponseWriter, request *http.Request) {
 
 }
@@ -56,6 +76,11 @@ func (h *Handler) CreateEvent(writer http.ResponseWriter, request *http.Request)
 
 	eventInfo := &CreateEventRequest{}
 	err := json.NewDecoder(request.Body).Decode(eventInfo)
+	if err != nil {
+		fmt.Errorf(err.Error())
+		writer.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 	fmt.Println("eventInfo:", eventInfo)
 
 	if err != nil {
@@ -79,7 +104,7 @@ func (h *Handler) CreateEvent(writer http.ResponseWriter, request *http.Request)
 	err = h.repo.CreateEvent(request.Context(), eventParams)
 	if err != nil {
 		fmt.Println(err)
-		writer.WriteHeader(http.StatusInternalServerError)
+		writer.WriteHeader(http.StatusBadRequest)
 		return
 	}
 	writer.WriteHeader(http.StatusCreated)

@@ -34,6 +34,7 @@ func NewRouter(h *Handler) *chi.Mux {
 		// Работа с событиями
 		r.Route("/events", func(r chi.Router) {
 			r.Post("/create", h.CreateEvent)
+			r.Get("/getEvents", h.GetEventsByUserID)
 		})
 	})
 

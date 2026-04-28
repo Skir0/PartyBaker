@@ -15,31 +15,58 @@ export function NewEventPage() {
 
     const handleBack = () => {
         console.log('Navigate back');
-        navigate(-1)
+        navigate(-1);
     };
 
-    const handleNext = () => {
-        console.log('Go to next step');
-        navigate(1);
-    };
-
-    const handleCreate = () => {
-        console.log('Create event');
-
-        const req: CreateEventRequest = {
-            name: formData.eventName,
-            date: formData.eventDate,
-            deadline: formData.contributionDeadline,
-            admin_id: 23,
-        }
-        createEvent(req);
-    };
 
     const [formData, setFormData] = useState<EventFormData>({
-        eventName: "",
-        eventDate: "",
-        contributionDeadline: ""
+        eventName: '',
+        eventDate: '',
+        contributionDeadline: ''
     });
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [submitMessage, setSubmitMessage] = useState<string | null>(null);
+    const [submitError, setSubmitError] = useState<string | null>(null);
+
+    const handleCreate = async () => {
+        setIsSubmitting(true);
+        setSubmitMessage(null);
+        setSubmitError(null);
+
+        try {
+            const req: CreateEventRequest = {
+                name: formData.eventName,
+                date: formData.eventDate,
+                deadline: formData.contributionDeadline,
+                admin_id: 12345678
+            };
+
+            await createEvent(req);
+            setSubmitMessage('Event created successfully.');
+        } catch (err: unknown) {
+            const errorMessage =
+                typeof err === 'object' &&
+                err !== null &&
+                'response' in err &&
+                typeof err.response === 'object' &&
+                err.response !== null &&
+                'data' in err.response &&
+                typeof err.response.data === 'object' &&
+                err.response.data !== null &&
+                'message' in err.response.data &&
+                typeof err.response.data.message === 'string'
+                    ? err.response.data.message
+                    : err instanceof Error
+                        ? err.message
+                        : 'Failed to create event.';
+
+            setSubmitError(
+                errorMessage
+            );
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
 
     const handleChange = (field: keyof EventFormData) => (e: React.ChangeEvent<HTMLInputElement>) => {
         setFormData(prev => ({ ...prev, [field]: e.target.value }));
@@ -50,7 +77,6 @@ export function NewEventPage() {
             <TopAppBar
                 title="New Event"
                 onBack={handleBack}
-                onNext={handleNext}
             />
 
             <main className="flex-grow pt-20 px-4 pb-32 max-w-2xl mx-auto w-full">
@@ -62,12 +88,26 @@ export function NewEventPage() {
                 <EventForm formData={formData} onChange={handleChange} />
 
                 <StreamlineCard />
+
+                {submitMessage && (
+                    <p className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
+                        {submitMessage}
+                    </p>
+                )}
+
+                {submitError && (
+                    <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+                        {submitError}
+                    </p>
+                )}
+
             </main>
 
             <BottomButton
-                text="Create Event"
+                text={isSubmitting ? 'Creating...' : 'Create Event'}
                 icon="arrow_forward"
                 onClick={handleCreate}
+                disabled={isSubmitting}
             />
         </div>
     );

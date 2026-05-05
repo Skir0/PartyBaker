@@ -132,3 +132,15 @@ values ((select participants.id
         (select id from Gifts where contract_address = $2),
         $3, $4, true)
 on conflict (transaction_hash) do nothing;
+
+-- name: UpdateEvent :one
+update events
+set name = $1,
+    date = $2,
+    deadline = $3
+where id = $4 and admin_id = $5
+returning id, name, date, deadline, admin_id;
+
+-- name: DeleteEvent :execrows
+delete from events
+where id = $1 and admin_id = $2;

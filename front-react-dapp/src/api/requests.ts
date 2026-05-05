@@ -5,6 +5,8 @@ export interface CreateEventRequest {
     admin_id: number;
 }
 
-export interface GetEventsRequest {
-    user_id: number;
+export interface UpdateEventRequest {
+    name: string;
+    date: string;
+    deadline: string;
 }

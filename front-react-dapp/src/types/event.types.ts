@@ -5,6 +5,20 @@ export interface EventFormData {
     contributionDeadline: string;
 }
 
+export interface EventAdminSheetProps {
+    isOpen: boolean;
+    eventTitle: string;
+    participantCount: number;
+    formData: EventFormData;
+    isCancelConfirming: boolean;
+    onChange: (field: keyof EventFormData) => (e: React.ChangeEvent<HTMLInputElement>) => void;
+    onClose: () => void;
+    onSave: () => void;
+    onCancelClick: () => void;
+    onKeepEvent: () => void;
+    onConfirmCancel: () => void;
+}
+
 export interface MaterialIconProps {
     icon: string;
     fill?: boolean;
@@ -53,7 +67,7 @@ export interface SummaryStatCardProps {
     icon: string;
     iconClassName: string;
     label: string;
-    value: string;
+    value: number;
 }
 
 export interface EventOverviewCardProps {
@@ -66,4 +80,14 @@ export interface EventOverviewCardProps {
     eventDate: string;
     deadline: string;
     deadlineClassName?: string;
+    isAdmin?: boolean;
+    onSettingsClick?: () => void;
+}
+export interface EventResponse {
+    id: number;
+    name: string;
+    date: string;
+    deadline: string;
+    participants_amount: number;
+    is_admin: boolean;
 }

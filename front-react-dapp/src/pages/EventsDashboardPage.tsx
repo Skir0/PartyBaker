@@ -3,80 +3,53 @@ import { EventsDashboardHeader } from '../components/ui/EventsDashboardHeader.ts
 import { SummaryStatCard } from '../components/cards/SummaryStatCard.tsx';
 import { EventOverviewCard } from '../components/cards/EventOverviewCard.tsx';
 import { BottomNavBar } from '../components/ui/BottomNavBar.tsx';
+import { EventAdminSheet } from '../components/ui/EventAdminSheet.tsx';
 import { MaterialIcon } from '../components/ui/MaterialIcon.tsx';
 import { useEffect, useState } from 'react';
-import { getEventsOfCurrentUser } from '../api/giftService.ts';
-import type { GetEventsRequest } from '../api/requests.ts';
+import { deleteEvent, getEventsOfCurrentUser, updateEvent } from '../api/giftService.ts';
+import type { EventFormData, EventResponse } from '../types/event.types.ts';
 
-const summaryStats = [
-    {
-        icon: 'celebration',
-        iconClassName: 'text-primary',
-        label: 'Active Events',
-        value: '12',
-    },
-    {
-        icon: 'history_edu',
-        iconClassName: 'text-tertiary',
-        label: 'Gifts Shared',
-        value: '48',
-    },
-];
 
-const eventCards = [
-    {
-        title: "Sarah's Birthday Bash",
-        participants: '8 Participants',
-        imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBTwrIPQ4Uio2WJ8I0HMv2C4z5dwRn5jhV-v_-3fwQsAizZHyqQtgJUrWTdbF7ol8LzaqyvPRAMgRk03HX2X1w9_P3A1AVhQaJOA9ReEPRZeJFJfGHNMuqQWjnAZrFkZscmUGMbVsVPVKfSHF5cn54PRnPqtNoNtw7N8vHXtbm99NqQaE_FAJnQK0Vvp-SjaiDkAUgm3a0B2jFKnJUFjTKWJQvco4NXDEEQNLsZ8FH6ExUUDSivENyNv_5OmNUUsndpzsRsdOqN7NuV',
-        imageAlt: 'Birthday cake with candles and decorations',
-        status: 'Active',
-        statusClassName: 'bg-primary/10 text-primary',
-        eventDate: 'Oct 24, 2024',
-        deadline: 'Oct 20',
-        deadlineClassName: 'text-error font-semibold',
-    },
-    {
-        title: 'Office Secret Santa',
-        participants: '24 Participants',
-        imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDDXy9Te7nWp6Zcr2DZMerz3JXr9gm1QgFXk5EGRWlWrnETaAtxSIyn1EjOulua7mVjIzVRkjYrU48DdU5DfIUYZ4h8ao6Q1rsOxMtIcCr92JUAtsNMC0SuAHfcLMLVPYfFTDtR_QZ_yrvgArrFTD4nO_MdCru76yHodVdATcwjF084REDYC37JLmjQVDr1OBeT1JBH14V5BEpt33dYfEIt8O128GdQt5fT4_usLKhlaQ_ZSme55VtVtZtkWp4PtSankKuzUFOyZRSW',
-        imageAlt: 'Wrapped Christmas gifts with ribbons',
-        status: 'Invited',
-        statusClassName: 'bg-surface-container-high text-on-surface-variant',
-        eventDate: 'Dec 20, 2024',
-        deadline: 'Dec 10',
-    },
-    {
-        title: "Mike's Housewarming",
-        participants: '5 Participants',
-        imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDNwS9TGI5a3ETXvHQvqJL_NTcUyTSp8Q_hi9p40CzlWrKLNQTxI4yupThY6e4xeyVFH0cwRgbsUU6fgpFCEOyw8q78LWnLmO14k8Ssdte6QQEELJ46BSy9wTkpBlOsCvC_7keHpNeagK09ztuhJJgnlKjliLqig_Fu6BTXfN9O_9uwaaNWFejR9PLSEMA7EM-lgTFzxkEPeXiDTQcDfn_VM-yMB1tkz7dekovL2y1qhHIdH7AQ3zPEFuKskruDn14DszQnptctiiA4',
-        imageAlt: 'Modern living room interior',
-        status: 'Planning',
-        statusClassName: 'bg-tertiary/10 text-tertiary',
-        eventDate: 'Nov 02, 2024',
-        deadline: 'Oct 28',
-    },
-];
+
 
 
 
 export function EventsDashboardPage() {
 
     const [isLoading, setIsLoading] = useState<boolean>(false);
-    const [error, setError] = useState<string>(null);
-    const [events, setEvents] = useState();
+    const [error, setError] = useState<string | null>(null);
+    const [events, setEvents] = useState<EventResponse[]>([]);
+    const [selectedEvent, setSelectedEvent] = useState<EventResponse | null>(null);
+    const [adminFormData, setAdminFormData] = useState<EventFormData>({
+        eventName: '',
+        eventDate: '',
+        contributionDeadline: ''
+    });
+    const [isCancelConfirming, setIsCancelConfirming] = useState(false);
+
+    const summaryStats = [
+        {
+            icon: 'celebration',
+            iconClassName: 'text-primary',
+            label: 'Active Events',
+            value: events.length
+        },
+        {
+            icon: 'history_edu',
+            iconClassName: 'text-tertiary',
+            label: 'Gifts Shared',
+            value: 0
+        }
+    ];
 
     useEffect(() => {
         const loadEvents = async () => {
             setIsLoading(true);
             setError(null);
 
-            const req: GetEventsRequest = {
-                user_id: 12345678
-            }
-
             try {
-                const data = await getEventsOfCurrentUser(req);
-                console.log(data)
+                const data = await getEventsOfCurrentUser();
+                console.log(data);
                 setEvents(data);
             } catch (err) {
                 setError('Failed to load events');
@@ -86,7 +59,73 @@ export function EventsDashboardPage() {
         };
 
         loadEvents();
+
     }, []);
+
+    const adminSettingsClick = (eventId: number) => {
+        const event = events.find((item) => item.id === eventId) ?? null;
+        if (!event) {
+            return;
+        }
+
+        setSelectedEvent(event);
+        setAdminFormData({
+            eventName: event.name,
+            eventDate: event.date,
+            contributionDeadline: event.deadline
+        });
+        setIsCancelConfirming(false);
+    };
+
+    const closeAdminSheet = () => {
+        setSelectedEvent(null);
+        setIsCancelConfirming(false);
+    };
+
+    const handleAdminFormChange = (field: keyof EventFormData) => (e: React.ChangeEvent<HTMLInputElement>) => {
+        setAdminFormData((prev) => ({ ...prev, [field]: e.target.value }));
+    };
+
+    const handleSaveAdminChanges = async () => {
+        if (!selectedEvent) {
+            return;
+        }
+
+        try {
+            const updatedEvent = await updateEvent(selectedEvent.id, {
+                name: adminFormData.eventName,
+                date: adminFormData.eventDate,
+                deadline: adminFormData.contributionDeadline
+            });
+
+            setEvents((prev) =>
+                prev.map((event) =>
+                    event.id === updatedEvent.id
+                        ? updatedEvent
+                        : event
+                )
+            );
+
+            closeAdminSheet();
+        } catch {
+            setError('Failed to update event');
+        }
+    };
+
+    const handleConfirmCancelEvent = async () => {
+        if (!selectedEvent) {
+            return;
+        }
+
+        try {
+            await deleteEvent(selectedEvent.id);
+            setEvents((prev) => prev.filter((event) => event.id !== selectedEvent.id));
+            closeAdminSheet();
+        } catch {
+            setError('Failed to delete event');
+        }
+    };
+
 
     return (
         <div className="min-h-screen bg-background text-on-background">
@@ -94,7 +133,12 @@ export function EventsDashboardPage() {
             <main className="mx-auto max-w-2xl px-4 pb-32 pt-14">
                 <div className="mb-6 mt-4 grid grid-cols-2 gap-3">
                     {summaryStats.map((stat) => (
-                        <SummaryStatCard key={stat.label} {...stat} />
+                        <SummaryStatCard
+                            icon={stat.icon}
+                            iconClassName={stat.iconClassName}
+                            label={stat.label}
+                            value={stat.value}
+                        />
                     ))}
                 </div>
 
@@ -103,12 +147,35 @@ export function EventsDashboardPage() {
                 </h2>
 
                 <div className="flex flex-col gap-3">
-                    {eventCards.map((card) => (
-                        <EventOverviewCard key={card.title} {...card} />
+                    {error && (
+                        <p className="py-2 text-center text-on-surface-variant">{error}</p>
+                    )}
+
+                    {events.length === 0 && !isLoading && (
+                        <p className="text-on-surface-variant text-center py-8">No events yet.</p>
+                    )}
+
+                    {events.map((event) => (
+                        <EventOverviewCard
+                            key={event.id}
+                            title={event.name}
+                            participants={`${event.participants_amount} Participants`}
+                            status="Active" // you can derive this later
+                            eventDate={event.date}
+                            deadline={event.deadline}
+                            imageUrl={''}
+                            imageAlt={''}
+                            statusClassName={''}
+                            isAdmin={event.is_admin}
+                            onSettingsClick={() => adminSettingsClick(event.id)}
+                        />
                     ))}
 
+
+
                     <Link to="/eventForm" className="mt-1 block">
-                        <button className="flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-primary text-[16px] font-semibold text-on-primary shadow-lg shadow-primary/20 transition-transform active:scale-[0.98]">
+                        <button
+                            className="flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-primary text-[16px] font-semibold text-on-primary shadow-lg shadow-primary/20 transition-transform active:scale-[0.98]">
                             <MaterialIcon icon="add_circle" fill={true} />
                             <span>Create New Event</span>
                         </button>
@@ -124,6 +191,20 @@ export function EventsDashboardPage() {
             </Link>
 
             <BottomNavBar />
+
+            <EventAdminSheet
+                isOpen={selectedEvent !== null}
+                eventTitle={selectedEvent?.name ?? ''}
+                participantCount={selectedEvent?.participants_amount ?? 0}
+                formData={adminFormData}
+                isCancelConfirming={isCancelConfirming}
+                onChange={handleAdminFormChange}
+                onClose={closeAdminSheet}
+                onSave={handleSaveAdminChanges}
+                onCancelClick={() => setIsCancelConfirming(true)}
+                onKeepEvent={() => setIsCancelConfirming(false)}
+                onConfirmCancel={handleConfirmCancelEvent}
+            />
         </div>
     );
 }

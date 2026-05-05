@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -135,6 +136,28 @@ func (r *Repository) GetEventsInfoByUserId(ctx context.Context, userId int32) ([
 
 	return eventsInfo, nil
 
+}
+
+func (r *Repository) UpdateEvent(ctx context.Context, params db.UpdateEventParams) error {
+	_, err := r.query.UpdateEvent(ctx, params)
+	if err != nil {
+		return fmt.Errorf("error updating event in db: %w", err)
+	}
+
+	return nil
+
+}
+
+func (r *Repository) DeleteEvent(ctx context.Context, params db.DeleteEventParams) error {
+	rowsAffected, err := r.query.DeleteEvent(ctx, params)
+	if err != nil {
+		return fmt.Errorf("error deleting event in db: %w", err)
+	}
+	if rowsAffected == 0 {
+		return pgx.ErrNoRows
+	}
+
+	return nil
 }
 
 func (r *Repository) ProcessTransfer(ctx context.Context, contractAddress pgtype.Text,

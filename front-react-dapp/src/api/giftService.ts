@@ -1,5 +1,6 @@
 import apiClient from './apiClient.ts';
-import type { CreateEventRequest } from './requests.ts';
+import type { CreateEventRequest, UpdateEventRequest } from './requests.ts';
+import type { EventResponse } from '../types/event.types.ts';
 
 export const healthCheck = async () => {
 
@@ -26,9 +27,16 @@ export const createEvent = async (req: CreateEventRequest) => {
     return response.data;
 }
 
-
 export const getEventsOfCurrentUser = async () => {
-
     const response = await apiClient.get('/api/events/getEvents');
     return response.data;
+}
+
+export const updateEvent = async (eventId: number, req: UpdateEventRequest): Promise<EventResponse> => {
+    const response = await apiClient.put(`/api/events/${eventId}`, req);
+    return response.data;
+}
+
+export const deleteEvent = async (eventId: number): Promise<void> => {
+    await apiClient.delete(`/api/events/${eventId}`);
 }

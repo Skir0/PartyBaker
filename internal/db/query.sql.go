@@ -248,6 +248,24 @@ func (q *Queries) DecreaseCollectedAmount(ctx context.Context, arg DecreaseColle
 	return err
 }
 
+const deleteEvent = `-- name: DeleteEvent :execrows
+delete from events
+where id = $1 and admin_id = $2
+`
+
+type DeleteEventParams struct {
+	ID      int32
+	AdminID int32
+}
+
+func (q *Queries) DeleteEvent(ctx context.Context, arg DeleteEventParams) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteEvent, arg.ID, arg.AdminID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const deleteParticipantGift = `-- name: DeleteParticipantGift :exec
 delete
 from participant_gift
@@ -542,4 +560,40 @@ func (q *Queries) RecordTransfer(ctx context.Context, arg RecordTransferParams) 
 		arg.TransactionHash,
 	)
 	return err
+}
+
+const updateEvent = `-- name: UpdateEvent :one
+update events
+set name = $1,
+    date = $2,
+    deadline = $3
+where id = $4 and admin_id = $5
+returning id, name, date, deadline, admin_id
+`
+
+type UpdateEventParams struct {
+	Name     pgtype.Text
+	Date     pgtype.Timestamptz
+	Deadline pgtype.Timestamptz
+	ID       int32
+	AdminID  int32
+}
+
+func (q *Queries) UpdateEvent(ctx context.Context, arg UpdateEventParams) (Event, error) {
+	row := q.db.QueryRow(ctx, updateEvent,
+		arg.Name,
+		arg.Date,
+		arg.Deadline,
+		arg.ID,
+		arg.AdminID,
+	)
+	var i Event
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Date,
+		&i.Deadline,
+		&i.AdminID,
+	)
+	return i, err
 }

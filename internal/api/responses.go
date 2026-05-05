@@ -30,6 +30,7 @@ type EventResponse struct {
 	Date               string `json:"date"`
 	Deadline           string `json:"deadline"`
 	ParticipantsAmount int32  `json:"participants_amount"`
+	IsAdmin            bool   `json:"is_admin"`
 }
 
 type BasicUserInfoResponse struct {
@@ -74,14 +75,18 @@ func ConvertGiftsToResponses(gifts []db.Gift, currentUserID int64) []GiftRespons
 func ConvertEventsToResponses(events []db.GetEventsInfoByUserIDRow, currentUserID int64) []EventResponse {
 	eventResponses := make([]EventResponse, len(events))
 	for i, event := range events {
-
-		eventResponses[i] = EventResponse{
-			ID:                 event.ID,
-			Name:               event.Name.String,
-			Date:               event.Date.Time.Format("2006-01-02"),
-			Deadline:           event.Deadline.Time.Format("2006-01-02"),
-			ParticipantsAmount: event.ParticipantsCount,
-		}
+		eventResponses[i] = ConvertEventToResponse(event, currentUserID)
 	}
 	return eventResponses
+}
+
+func ConvertEventToResponse(event db.GetEventsInfoByUserIDRow, currentUserID int64) EventResponse {
+	return EventResponse{
+		ID:                 event.ID,
+		Name:               event.Name.String,
+		Date:               event.Date.Time.Format("2006-01-02"),
+		Deadline:           event.Deadline.Time.Format("2006-01-02"),
+		ParticipantsAmount: event.ParticipantsCount,
+		IsAdmin:            int64(event.AdminID) == currentUserID,
+	}
 }

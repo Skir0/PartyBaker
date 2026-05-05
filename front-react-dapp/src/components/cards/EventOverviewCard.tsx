@@ -2,20 +2,22 @@ import { MaterialIcon } from '../ui/MaterialIcon.tsx';
 import type { EventOverviewCardProps } from '../../types/event.types.ts';
 
 export function EventOverviewCard({
-    title,
-    participants,
-    imageUrl,
-    imageAlt,
-    status,
-    statusClassName,
-    eventDate,
-    deadline,
-    deadlineClassName = 'text-on-surface-variant',
-}: EventOverviewCardProps) {
+                                      title,
+                                      participants,
+                                      imageUrl,
+                                      imageAlt,
+                                      status,
+                                      statusClassName,
+                                      eventDate,
+                                      deadline,
+                                      deadlineClassName = 'text-on-surface-variant',
+                                      isAdmin,
+                                      onSettingsClick,
+                                  }: EventOverviewCardProps) {
 
 
     return (
-        <button className="w-full rounded-xl border border-outline-variant/5 bg-surface-container-lowest p-4 text-left shadow-sm transition-transform active:scale-[0.99]">
+        <div className="w-full rounded-xl border border-outline-variant/5 bg-surface-container-lowest p-4 text-left shadow-sm transition-transform active:scale-[0.99]">
             <div className="flex flex-col gap-3">
                 <div className="flex items-start justify-between gap-4">
                     <div className="flex gap-3">
@@ -33,6 +35,18 @@ export function EventOverviewCard({
                     <span className={`rounded-full px-2 py-1 text-[11px] font-bold uppercase ${statusClassName}`}>
                         {status}
                     </span>
+                    {isAdmin && (
+                        <button
+                            onClick={(e) => {
+
+                                e.stopPropagation(); // don't trigger card click
+                                onSettingsClick?.();
+                            }}
+                            className="flex items-center justify-center w-7 h-7 rounded-full text-on-surface-variant hover:bg-surface-container active:bg-surface-container-high transition-colors"
+                        >
+                            <MaterialIcon icon="settings" size="text-[18px]" />
+                        </button>
+                    )}
                 </div>
 
                 <div className="mt-1 grid grid-cols-2 gap-4">
@@ -52,6 +66,6 @@ export function EventOverviewCard({
                     </div>
                 </div>
             </div>
-        </button>
+        </div>
     );
 }

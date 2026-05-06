@@ -4,26 +4,6 @@ import (
 	"PartyBaker/internal/db"
 )
 
-type GiftResponse struct {
-	ID          int32  `json:"id"`
-	Name        string `json:"name"`
-	Description string `json:"description,omitempty"` // omitempty скроет поле, если оно пустое
-	Link        string `json:"link"`
-
-	// Блок сумм
-	TargetAmount    string  `json:"target_amount"`
-	CollectedAmount string  `json:"collected_amount"`
-	Progress        float64 `json:"progress"`
-
-	// Блок блокчейна
-	ContractAddress string `json:"contract_address"`
-	Status          string `json:"status"`
-
-	// Блок участников
-	RecipientName string `json:"recipient_name"`
-	IsAdmin       bool   `json:"is_admin"`
-}
-
 type EventResponse struct {
 	ID                 int32  `json:"id"`
 	Name               string `json:"name"`
@@ -39,33 +19,46 @@ type BasicUserInfoResponse struct {
 	LastName  string `json:"last_name"`
 }
 
-func ConvertGiftsToResponses(gifts []db.Gift, currentUserID int64) []GiftResponse {
+type RecipientResponse struct {
+	Id        int32  `json:"id"`
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+}
+
+type GiftResponse struct {
+	Id              int32  `json:"id"`
+	Name            string `json:"name"`
+	Link            string `json:"link"`
+	Status          string `json:"status"`
+	ContractAddress string `json:"contract_address"`
+	AdminId         int32  `json:"admin_id"`
+	TargetAmount    int32  `json:"target_amount"`
+	CollectedAmount int32  `json:"collected_amount"`
+	RecipientId     int32  `json:"recipient_id"`
+	LikesAmount     int32  `json:"likes_amount"`
+	Description     string `json:"description"`
+	ImageUrl        string `json:"image_url"`
+}
+
+func ConvertGiftsToResponses(gifts []db.Gift) []GiftResponse {
 
 	giftResponses := make([]GiftResponse, len(gifts))
 
 	for i, gift := range gifts {
 
-		target := formatInt8(gift.TargetAmount)
-		collected := formatInt8(gift.CollectedAmount)
-
-		var progress float64 = 0
-		if gift.TargetAmount.Int64 > 0 {
-			progress = (float64(gift.CollectedAmount.Int64) / float64(gift.TargetAmount.Int64)) * 100
-		}
-
 		giftResponses[i] = GiftResponse{
-			ID:              gift.ID,
+			Id:              gift.ID,
 			Name:            gift.Name.String,
-			Description:     "",
 			Link:            gift.Link.String,
-			TargetAmount:    target,
-			CollectedAmount: collected,
-			Progress:        progress,
+			TargetAmount:    int32(gift.TargetAmount.Int64),
+			CollectedAmount: int32(gift.CollectedAmount.Int64),
 			ContractAddress: gift.ContractAddress.String,
 			Status:          gift.Status,
-			// test
-			RecipientName: "",
-			IsAdmin:       int64(gift.AdminID) == currentUserID,
+			RecipientId:     gift.RecipientID,
+			AdminId:         gift.AdminID,
+			LikesAmount:     gift.LikesAmount.Int32,
+			Description:     gift.Description.String,
+			ImageUrl:        gift.ImageUrl.String,
 		}
 	}
 	return giftResponses
@@ -78,6 +71,18 @@ func ConvertEventsToResponses(events []db.GetEventsInfoByUserIDRow, currentUserI
 		eventResponses[i] = ConvertEventToResponse(event, currentUserID)
 	}
 	return eventResponses
+}
+
+func ConvertRecipientsToResponses(recipients []db.GetGiftRecipientsOfCurrentEventRow) []RecipientResponse {
+	recipientResponses := make([]RecipientResponse, len(recipients))
+	for i, recipient := range recipients {
+		recipientResponses[i] = RecipientResponse{
+			Id:        recipient.ID,
+			FirstName: recipient.FirstName.String,
+			LastName:  recipient.LastName.String,
+		}
+	}
+	return recipientResponses
 }
 
 func ConvertEventToResponse(event db.GetEventsInfoByUserIDRow, currentUserID int64) EventResponse {

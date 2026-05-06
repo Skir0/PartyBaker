@@ -144,3 +144,15 @@ returning id, name, date, deadline, admin_id;
 -- name: DeleteEvent :execrows
 delete from events
 where id = $1 and admin_id = $2;
+
+-- name: GetGiftRecipientsOfCurrentEvent :many
+select p.id, u.first_name, u.last_name
+from participants p
+         join users u on u.id = p.user_id
+where p.event_id = $1
+  and p.role = 'recipient';
+
+
+-- name: GetAllGiftsOfRecipient :many
+select * from gifts
+where recipient_id = $1;

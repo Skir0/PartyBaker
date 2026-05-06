@@ -82,6 +82,7 @@ export interface EventOverviewCardProps {
     deadlineClassName?: string;
     isAdmin?: boolean;
     onSettingsClick?: () => void;
+    onClick?: () => void;
 }
 export interface EventResponse {
     id: number;
@@ -90,4 +91,48 @@ export interface EventResponse {
     deadline: string;
     participants_amount: number;
     is_admin: boolean;
+}
+
+export interface GiftSuggestion {
+    id: number;
+    title: string;
+    price: string;
+    description: string;
+    imageUrl: string;
+    imageAlt: string;
+    supporterBadges: Array<{
+        label: string;
+        className: string;
+        textClassName?: string;
+    }>;
+    likes: number;
+    liked?: boolean;
+}
+
+export interface Gift {
+    id: number;
+    name: string;
+    link: string;
+    status: string;
+    contract_address: string;
+    admin_id: number
+    target_amount: number;
+    collected: number;
+    recipient_id: number;
+    likes_amount: number;
+    description: string;
+    image_url: string;
+}
+
+export interface RecipientGiftFolder {
+    id: string;
+    recipientName: string;
+    subtitle: string;
+    suggestions: GiftSuggestion[];
+}
+
+export interface RecipientResponse {
+    id: number;
+    first_name: string;
+    last_name: string;
 }

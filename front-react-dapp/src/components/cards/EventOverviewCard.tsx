@@ -13,11 +13,29 @@ export function EventOverviewCard({
                                       deadlineClassName = 'text-on-surface-variant',
                                       isAdmin,
                                       onSettingsClick,
+                                      onClick,
                                   }: EventOverviewCardProps) {
 
 
     return (
-        <div className="w-full rounded-xl border border-outline-variant/5 bg-surface-container-lowest p-4 text-left shadow-sm transition-transform active:scale-[0.99]">
+        <div
+            className={`w-full rounded-xl border border-outline-variant/5 bg-surface-container-lowest p-4 text-left shadow-sm transition-transform active:scale-[0.99] ${
+                onClick ? 'cursor-pointer' : ''
+            }`}
+            onClick={onClick}
+            role={onClick ? 'button' : undefined}
+            tabIndex={onClick ? 0 : undefined}
+            onKeyDown={(e) => {
+                if (!onClick) {
+                    return;
+                }
+
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onClick();
+                }
+            }}
+        >
             <div className="flex flex-col gap-3">
                 <div className="flex items-start justify-between gap-4">
                     <div className="flex gap-3">

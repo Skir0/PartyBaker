@@ -190,3 +190,20 @@ func (r *Repository) ProcessTransfer(ctx context.Context, contractAddress pgtype
 	tx.Commit(ctx)
 	return nil
 }
+
+func (r *Repository) GetGiftRecipientsOfEvent(ctx context.Context, eventID int32) ([]db.GetGiftRecipientsOfCurrentEventRow, error) {
+	participants, err := r.query.GetGiftRecipientsOfCurrentEvent(ctx, eventID)
+	if err != nil {
+		return nil, err
+	}
+	return participants, nil
+}
+
+func (r *Repository) GetAllGiftsOfRecipient(ctx context.Context, recipientID int32) ([]db.Gift, error) {
+
+	gifts, err := r.query.GetAllGiftsOfRecipient(ctx, recipientID)
+	if err != nil {
+		return nil, err
+	}
+	return gifts, nil
+}

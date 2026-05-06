@@ -1,4 +1,4 @@
-import { Link } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { EventsDashboardHeader } from '../components/ui/EventsDashboardHeader.tsx';
 import { SummaryStatCard } from '../components/cards/SummaryStatCard.tsx';
 import { EventOverviewCard } from '../components/cards/EventOverviewCard.tsx';
@@ -6,7 +6,7 @@ import { BottomNavBar } from '../components/ui/BottomNavBar.tsx';
 import { EventAdminSheet } from '../components/ui/EventAdminSheet.tsx';
 import { MaterialIcon } from '../components/ui/MaterialIcon.tsx';
 import { useEffect, useState } from 'react';
-import { deleteEvent, getEventsOfCurrentUser, updateEvent } from '../api/giftService.ts';
+import { deleteEvent, getEventsOfCurrentUser, getGiftRecipientsOfEvent, updateEvent } from '../api/giftService.ts';
 import type { EventFormData, EventResponse } from '../types/event.types.ts';
 
 
@@ -15,6 +15,7 @@ import type { EventFormData, EventResponse } from '../types/event.types.ts';
 
 
 export function EventsDashboardPage() {
+    const navigate = useNavigate();
 
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
@@ -126,6 +127,13 @@ export function EventsDashboardPage() {
         }
     };
 
+    const openEventGiftPoll = async (event: EventResponse) => {
+        const recipientsOfEvent = await getGiftRecipientsOfEvent(event.id)
+        navigate(`/events/${event.id}/gifts`, {
+            state: { event, recipientsOfEvent }
+        });
+    };
+
 
     return (
         <div className="min-h-screen bg-background text-on-background">
@@ -168,6 +176,7 @@ export function EventsDashboardPage() {
                             statusClassName={''}
                             isAdmin={event.is_admin}
                             onSettingsClick={() => adminSettingsClick(event.id)}
+                            onClick={() => openEventGiftPoll(event)}
                         />
                     ))}
 

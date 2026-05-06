@@ -28,6 +28,9 @@ type Gift struct {
 	RecipientID     int32
 	AdminID         int32
 	CollectedAmount pgtype.Int8
+	Description     pgtype.Text
+	ImageUrl        pgtype.Text
+	LikesAmount     pgtype.Int4
 }
 
 type Participant struct {

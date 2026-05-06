@@ -25,7 +25,6 @@ func NewRouter(h *Handler) *chi.Mux {
 
 		// Работа с подарками
 		r.Route("/gifts", func(r chi.Router) {
-			r.Get("/", h.GetGifts)                   // Список всех подарков
 			r.Post("/", h.CreateGift)                // Создать (зарегистрировать деплой)
 			r.Get("/{id}", h.GetGiftDetails)         // Детали подарка (из БД)
 			r.Get("/{id}/live", h.GetGiftLiveStatus) // Прямой запрос в TON
@@ -37,6 +36,15 @@ func NewRouter(h *Handler) *chi.Mux {
 			r.Get("/getEvents", h.GetEventsByUserID)
 			r.Put("/{id}", h.UpdateEvent)
 			r.Delete("/{id}", h.DeleteEvent)
+
+			// Работа с участниками
+			r.Route("/{id}", func(r chi.Router) {
+				r.Get("/recipients", h.GetGiftRecipientsOfEvent)
+				r.Route("/recipients/{recipient_id}", func(r chi.Router) {
+					r.Get("/gifts", h.GetAllGiftsOfRecipient)
+				})
+			})
+
 		})
 	})
 

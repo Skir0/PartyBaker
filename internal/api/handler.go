@@ -32,25 +32,6 @@ func (h *Handler) HealthCheck(writer http.ResponseWriter, request *http.Request)
 	writer.Write([]byte("OK"))
 }
 
-func (h *Handler) GetGifts(writer http.ResponseWriter, request *http.Request) {
-	fmt.Println("inside GetGifts")
-	currentUserID, ok := request.Context().Value(UserIDKey).(int64)
-	fmt.Println("currentUserID:", currentUserID)
-	if !ok {
-		writer.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	gifts, err := h.repo.GetGifts(request.Context())
-	if err != nil {
-		fmt.Errorf(err.Error())
-		writer.WriteHeader(http.StatusInternalServerError)
-	}
-
-	response := ConvertGiftsToResponses(gifts, currentUserID)
-	json.NewEncoder(writer).Encode(response)
-}
-
 func (h *Handler) GetEventsByUserID(writer http.ResponseWriter, request *http.Request) {
 
 	currentUserID, ok := request.Context().Value(UserIDKey).(int64)
@@ -225,4 +206,50 @@ func (h *Handler) GetMyProfile(writer http.ResponseWriter, request *http.Request
 		LastName:  userInfo.LastName.String,
 	}
 	json.NewEncoder(writer).Encode(response)
+}
+
+func (h *Handler) GetGiftRecipientsOfEvent(writer http.ResponseWriter, request *http.Request) {
+	fmt.Println("inside GetGiftRecipientsOfEvent")
+	idParam := chi.URLParam(request, "id")
+	eventID, err := strconv.Atoi(idParam)
+	currentUserID, ok := request.Context().Value(UserIDKey).(int64)
+	fmt.Println("currentUserID:", currentUserID)
+	if !ok {
+		writer.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	recipients, err := h.repo.GetGiftRecipientsOfEvent(request.Context(), int32(eventID))
+	response := ConvertRecipientsToResponses(recipients)
+
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	json.NewEncoder(writer).Encode(response)
+	writer.WriteHeader(http.StatusCreated)
+
+}
+
+func (h *Handler) GetAllGiftsOfRecipient(writer http.ResponseWriter, request *http.Request) {
+	fmt.Println("inside GetAllGiftsOfRecipient")
+	idParam := chi.URLParam(request, "recipient_id")
+	recipientId, err := strconv.Atoi(idParam)
+	currentUserID, ok := request.Context().Value(UserIDKey).(int64)
+
+	fmt.Println("currentUserID:", currentUserID)
+	if !ok {
+		writer.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	gifts, err := h.repo.GetAllGiftsOfRecipient(request.Context(), int32(recipientId))
+	response := ConvertGiftsToResponses(gifts)
+
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	json.NewEncoder(writer).Encode(response)
+	writer.WriteHeader(http.StatusCreated)
+
 }

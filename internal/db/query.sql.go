@@ -94,7 +94,7 @@ insert into Gifts (name, link, target_amount, collected_amount,
                    event_id, recipient_id, admin_id)
 values ($1, $2, $3, $4, $5,
         $6, $7, $8, $9)
-returning id, name, link, target_amount, status, contract_address, jetton_address, event_id, recipient_id, admin_id, collected_amount
+returning id, name, link, target_amount, status, contract_address, jetton_address, event_id, recipient_id, admin_id, collected_amount, description, image_url, likes_amount
 `
 
 type CreateGiftParams struct {
@@ -134,6 +134,9 @@ func (q *Queries) CreateGift(ctx context.Context, arg CreateGiftParams) (Gift, e
 		&i.RecipientID,
 		&i.AdminID,
 		&i.CollectedAmount,
+		&i.Description,
+		&i.ImageUrl,
+		&i.LikesAmount,
 	)
 	return i, err
 }
@@ -313,6 +316,46 @@ func (q *Queries) GetAllActiveGiftsAddresses(ctx context.Context) ([]pgtype.Text
 	return items, nil
 }
 
+const getAllGiftsOfRecipient = `-- name: GetAllGiftsOfRecipient :many
+select id, name, link, target_amount, status, contract_address, jetton_address, event_id, recipient_id, admin_id, collected_amount, description, image_url, likes_amount from gifts
+where recipient_id = $1
+`
+
+func (q *Queries) GetAllGiftsOfRecipient(ctx context.Context, recipientID int32) ([]Gift, error) {
+	rows, err := q.db.Query(ctx, getAllGiftsOfRecipient, recipientID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Gift
+	for rows.Next() {
+		var i Gift
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Link,
+			&i.TargetAmount,
+			&i.Status,
+			&i.ContractAddress,
+			&i.JettonAddress,
+			&i.EventID,
+			&i.RecipientID,
+			&i.AdminID,
+			&i.CollectedAmount,
+			&i.Description,
+			&i.ImageUrl,
+			&i.LikesAmount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getAllParticipantsOfGift = `-- name: GetAllParticipantsOfGift :many
 select id, role, user_id, event_id, is_paid, amount, transaction_hash, participant_id, gift_id
 from Participants
@@ -419,7 +462,7 @@ func (q *Queries) GetEventsInfoByUserID(ctx context.Context, adminID int32) ([]G
 }
 
 const getGiftByContract = `-- name: GetGiftByContract :one
-select id, name, link, target_amount, status, contract_address, jetton_address, event_id, recipient_id, admin_id, collected_amount
+select id, name, link, target_amount, status, contract_address, jetton_address, event_id, recipient_id, admin_id, collected_amount, description, image_url, likes_amount
 from Gifts
 where Gifts.contract_address = $1
 limit 1
@@ -440,12 +483,49 @@ func (q *Queries) GetGiftByContract(ctx context.Context, contractAddress pgtype.
 		&i.RecipientID,
 		&i.AdminID,
 		&i.CollectedAmount,
+		&i.Description,
+		&i.ImageUrl,
+		&i.LikesAmount,
 	)
 	return i, err
 }
 
+const getGiftRecipientsOfCurrentEvent = `-- name: GetGiftRecipientsOfCurrentEvent :many
+select p.id, u.first_name, u.last_name
+from participants p
+         join users u on u.id = p.user_id
+where p.event_id = $1
+  and p.role = 'recipient'
+`
+
+type GetGiftRecipientsOfCurrentEventRow struct {
+	ID        int32
+	FirstName pgtype.Text
+	LastName  pgtype.Text
+}
+
+func (q *Queries) GetGiftRecipientsOfCurrentEvent(ctx context.Context, eventID int32) ([]GetGiftRecipientsOfCurrentEventRow, error) {
+	rows, err := q.db.Query(ctx, getGiftRecipientsOfCurrentEvent, eventID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetGiftRecipientsOfCurrentEventRow
+	for rows.Next() {
+		var i GetGiftRecipientsOfCurrentEventRow
+		if err := rows.Scan(&i.ID, &i.FirstName, &i.LastName); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getGifts = `-- name: GetGifts :many
-select id, name, link, target_amount, status, contract_address, jetton_address, event_id, recipient_id, admin_id, collected_amount from Gifts
+select id, name, link, target_amount, status, contract_address, jetton_address, event_id, recipient_id, admin_id, collected_amount, description, image_url, likes_amount from Gifts
 `
 
 func (q *Queries) GetGifts(ctx context.Context) ([]Gift, error) {
@@ -469,6 +549,9 @@ func (q *Queries) GetGifts(ctx context.Context) ([]Gift, error) {
 			&i.RecipientID,
 			&i.AdminID,
 			&i.CollectedAmount,
+			&i.Description,
+			&i.ImageUrl,
+			&i.LikesAmount,
 		); err != nil {
 			return nil, err
 		}

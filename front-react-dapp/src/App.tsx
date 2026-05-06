@@ -4,6 +4,7 @@ import { Route, Routes } from 'react-router';
 import { NewEventPage } from './pages/NewEventPage.tsx';
 import { CreateEventCard } from './pages/CreateEventCard.tsx';
 import { EventsDashboardPage } from './pages/EventsDashboardPage.tsx';
+import { EventGiftPollPage } from './pages/EventGiftPollPage.tsx';
 
 function App() {
 
@@ -14,6 +15,7 @@ function App() {
                     <Route path="/" element={<EventsDashboardPage />} />
                     <Route path="/join" element={<CreateEventCard />} />
                     <Route path="/eventForm" element={<NewEventPage />} />
+                    <Route path="/events/:eventId/gifts" element={<EventGiftPollPage />} />
                 </Routes>
             </main>
 

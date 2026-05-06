@@ -32,6 +32,18 @@ export const getEventsOfCurrentUser = async () => {
     return response.data;
 }
 
+export const getGiftRecipientsOfEvent = async (eventId: number) => {
+    console.log("id", eventId)
+    const response = await apiClient.get(`/api/events/${eventId}/recipients`);
+    return response.data;
+}
+
+export const getAllGiftsOfRecipient = async (eventId: number, recipientId: number) => {
+    console.log("id", recipientId)
+    const response = await apiClient.get(`/api/events/${eventId}/recipients/${recipientId}/gifts`);
+    return response.data;
+}
+
 export const updateEvent = async (eventId: number, req: UpdateEventRequest): Promise<EventResponse> => {
     const response = await apiClient.put(`/api/events/${eventId}`, req);
     return response.data;

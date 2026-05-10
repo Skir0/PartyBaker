@@ -29,3 +29,17 @@ func parseJsonDate(dateStr string, check time.Time) (pgtype.Timestamptz, error) 
 		Valid: true,
 	}, nil
 }
+
+func parseJsonInt(num int32) pgtype.Int8 {
+	return pgtype.Int8{
+		Int64: int64(num),
+		Valid: true,
+	}
+}
+
+func parseJsonString(str string) pgtype.Text {
+	return pgtype.Text{
+		String: str,
+		Valid:  true,
+	}
+}

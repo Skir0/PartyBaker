@@ -14,11 +14,11 @@ values ($1, $2, $3)
 returning *;
 
 -- name: CreateGift :one
-insert into Gifts (name, link, target_amount, collected_amount,
+insert into Gifts (name, link, target_amount,
                    contract_address, jetton_address,
-                   event_id, recipient_id, admin_id)
-values ($1, $2, $3, $4, $5,
-        $6, $7, $8, $9)
+                   event_id, recipient_id, admin_id, description, image_url)
+values ($1, $2, $3,$4, $5,
+        $6, $7, $8, $9, $10)
 returning *;
 
 -- name: CreateParticipantGift :one
@@ -153,6 +153,18 @@ where p.event_id = $1
   and p.role = 'recipient';
 
 
--- name: GetAllGiftsOfRecipient :many
-select * from gifts
-where recipient_id = $1;
+-- name: GetGiftsInfoByRecipient :many
+select g.*,
+       (select count(*) from giftlikes where giftlikes.gift_id = g.id) as likes_amount,
+                               exists(select 1 from giftlikes where giftlikes.user_id = $1 and giftlikes.gift_id = g.id)
+from Gifts g
+where g.recipient_id = $2;
+
+-- name: AddGiftLike :exec
+insert into giftlikes (user_id, gift_id)
+values ($1, $2)
+ON CONFLICT DO NOTHING;
+
+-- name: RemoveGiftLike :exec
+delete from giftlikes
+WHERE user_id = $1 AND gift_id = $2;

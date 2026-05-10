@@ -3,9 +3,11 @@ import type { GiftSuggestion } from '../../types/event.types.ts';
 
 interface GiftSuggestionCardProps {
     suggestion: GiftSuggestion;
+    handleToggleLike: (giftId: number, currentlyLiked: boolean) => Promise<void>
 }
 
-export function GiftSuggestionCard({ suggestion }: GiftSuggestionCardProps) {
+export function GiftSuggestionCard({ suggestion, handleToggleLike }: GiftSuggestionCardProps) {
+
     return (
         <article className="flex items-start gap-4 rounded-xl border border-outline-variant/5 bg-surface-container-lowest p-3 shadow-sm">
             <div className="h-24 w-24 shrink-0 overflow-hidden rounded-lg bg-surface-container">
@@ -45,6 +47,7 @@ export function GiftSuggestionCard({ suggestion }: GiftSuggestionCardProps) {
                                 ? 'bg-primary text-on-primary'
                                 : 'bg-surface-container-low text-on-surface-variant'
                         }`}
+                        onClick={() => handleToggleLike(suggestion.id, suggestion.liked)}
                     >
                         <MaterialIcon icon="favorite" fill={suggestion.liked} size="text-[18px]" />
                         <span>{suggestion.likes}</span>

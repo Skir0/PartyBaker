@@ -48,6 +48,16 @@ func (r *Repository) CreateEvent(ctx context.Context, params db.CreateEventParam
 
 }
 
+func (r *Repository) CreateGift(ctx context.Context, params db.CreateGiftParams) error {
+	_, err := r.query.CreateGift(ctx, params)
+	fmt.Println("inside repo CreateGift:", params)
+	if err != nil {
+		return fmt.Errorf("database error: %w", err)
+	}
+	return nil
+
+}
+
 func (r *Repository) GetAllActiveGiftsAddresses(ctx context.Context) ([]pgtype.Text, error) {
 	slice, err := r.query.GetAllActiveGiftsAddresses(ctx)
 
@@ -141,11 +151,10 @@ func (r *Repository) GetEventsInfoByUserId(ctx context.Context, userId int32) ([
 func (r *Repository) UpdateEvent(ctx context.Context, params db.UpdateEventParams) error {
 	_, err := r.query.UpdateEvent(ctx, params)
 	if err != nil {
-		return fmt.Errorf("error updating event in db: %w", err)
+		return fmt.Errorf("database error: %w", err)
+
 	}
-
 	return nil
-
 }
 
 func (r *Repository) DeleteEvent(ctx context.Context, params db.DeleteEventParams) error {
@@ -191,7 +200,7 @@ func (r *Repository) ProcessTransfer(ctx context.Context, contractAddress pgtype
 	return nil
 }
 
-func (r *Repository) GetGiftRecipientsOfEvent(ctx context.Context, eventID int32) ([]db.GetGiftRecipientsOfCurrentEventRow, error) {
+func (r *Repository) GetRecipientsOfEvent(ctx context.Context, eventID int32) ([]db.GetGiftRecipientsOfCurrentEventRow, error) {
 	participants, err := r.query.GetGiftRecipientsOfCurrentEvent(ctx, eventID)
 	if err != nil {
 		return nil, err
@@ -199,11 +208,37 @@ func (r *Repository) GetGiftRecipientsOfEvent(ctx context.Context, eventID int32
 	return participants, nil
 }
 
-func (r *Repository) GetAllGiftsOfRecipient(ctx context.Context, recipientID int32) ([]db.Gift, error) {
+func (r *Repository) GetGiftsInfoByRecipient(ctx context.Context, userID int32, recipientID int32) ([]db.GetGiftsInfoByRecipientRow, error) {
 
-	gifts, err := r.query.GetAllGiftsOfRecipient(ctx, recipientID)
+	response, err := r.query.GetGiftsInfoByRecipient(ctx, db.GetGiftsInfoByRecipientParams{
+		UserID:      userID,
+		RecipientID: recipientID,
+	})
 	if err != nil {
 		return nil, err
 	}
-	return gifts, nil
+	return response, nil
+
+}
+
+func (r *Repository) AddGiftLike(ctx context.Context, userID int32, giftID int32) error {
+	err := r.query.AddGiftLike(ctx, db.AddGiftLikeParams{
+		UserID: userID,
+		GiftID: giftID,
+	})
+	if err != nil {
+		return fmt.Errorf("error add gift like in db: %w", err)
+	}
+	return nil
+}
+
+func (r *Repository) RemoveGiftLike(ctx context.Context, userID int32, giftID int32) error {
+	err := r.query.RemoveGiftLike(ctx, db.RemoveGiftLikeParams{
+		UserID: userID,
+		GiftID: giftID,
+	})
+	if err != nil {
+		return fmt.Errorf("error remove gift like in db: %w", err)
+	}
+	return nil
 }

@@ -10,3 +10,14 @@ export interface UpdateEventRequest {
     date: string;
     deadline: string;
 }
+
+export interface CreateGiftRequest {
+    name: string;
+    link: string;
+    target_amount: number;
+    contract_address: string;
+    jetton_address: string;
+    recipient_id: number;
+    description: string;
+    image_url: string;
+}

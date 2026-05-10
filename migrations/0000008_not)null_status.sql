@@ -1,0 +1,3 @@
+ALTER TABLE gifts
+    ALTER COLUMN status SET DEFAULT 'active',
+    ALTER COLUMN status SET NOT NULL;

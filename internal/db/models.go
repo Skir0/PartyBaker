@@ -30,7 +30,12 @@ type Gift struct {
 	CollectedAmount pgtype.Int8
 	Description     pgtype.Text
 	ImageUrl        pgtype.Text
-	LikesAmount     pgtype.Int4
+}
+
+type Giftlike struct {
+	UserID    int32
+	GiftID    int32
+	CreatedAt pgtype.Timestamp
 }
 
 type Participant struct {

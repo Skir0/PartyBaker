@@ -12,6 +12,22 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const addGiftLike = `-- name: AddGiftLike :exec
+insert into giftlikes (user_id, gift_id)
+values ($1, $2)
+ON CONFLICT DO NOTHING
+`
+
+type AddGiftLikeParams struct {
+	UserID int32
+	GiftID int32
+}
+
+func (q *Queries) AddGiftLike(ctx context.Context, arg AddGiftLikeParams) error {
+	_, err := q.db.Exec(ctx, addGiftLike, arg.UserID, arg.GiftID)
+	return err
+}
+
 const cancelGift = `-- name: CancelGift :execresult
 update Gifts
 set status = 'cancelled'
@@ -89,24 +105,25 @@ func (q *Queries) CreateEvent(ctx context.Context, arg CreateEventParams) (Event
 }
 
 const createGift = `-- name: CreateGift :one
-insert into Gifts (name, link, target_amount, collected_amount,
+insert into Gifts (name, link, target_amount,
                    contract_address, jetton_address,
-                   event_id, recipient_id, admin_id)
+                   event_id, recipient_id, admin_id, description, image_url)
 values ($1, $2, $3, $4, $5,
-        $6, $7, $8, $9)
-returning id, name, link, target_amount, status, contract_address, jetton_address, event_id, recipient_id, admin_id, collected_amount, description, image_url, likes_amount
+        $6, $7, $8, $9, $10)
+returning id, name, link, target_amount, status, contract_address, jetton_address, event_id, recipient_id, admin_id, collected_amount, description, image_url
 `
 
 type CreateGiftParams struct {
 	Name            pgtype.Text
 	Link            pgtype.Text
 	TargetAmount    pgtype.Int8
-	CollectedAmount pgtype.Int8
 	ContractAddress pgtype.Text
 	JettonAddress   pgtype.Text
 	EventID         int32
 	RecipientID     int32
 	AdminID         int32
+	Description     pgtype.Text
+	ImageUrl        pgtype.Text
 }
 
 func (q *Queries) CreateGift(ctx context.Context, arg CreateGiftParams) (Gift, error) {
@@ -114,12 +131,13 @@ func (q *Queries) CreateGift(ctx context.Context, arg CreateGiftParams) (Gift, e
 		arg.Name,
 		arg.Link,
 		arg.TargetAmount,
-		arg.CollectedAmount,
 		arg.ContractAddress,
 		arg.JettonAddress,
 		arg.EventID,
 		arg.RecipientID,
 		arg.AdminID,
+		arg.Description,
+		arg.ImageUrl,
 	)
 	var i Gift
 	err := row.Scan(
@@ -136,7 +154,6 @@ func (q *Queries) CreateGift(ctx context.Context, arg CreateGiftParams) (Gift, e
 		&i.CollectedAmount,
 		&i.Description,
 		&i.ImageUrl,
-		&i.LikesAmount,
 	)
 	return i, err
 }
@@ -316,46 +333,6 @@ func (q *Queries) GetAllActiveGiftsAddresses(ctx context.Context) ([]pgtype.Text
 	return items, nil
 }
 
-const getAllGiftsOfRecipient = `-- name: GetAllGiftsOfRecipient :many
-select id, name, link, target_amount, status, contract_address, jetton_address, event_id, recipient_id, admin_id, collected_amount, description, image_url, likes_amount from gifts
-where recipient_id = $1
-`
-
-func (q *Queries) GetAllGiftsOfRecipient(ctx context.Context, recipientID int32) ([]Gift, error) {
-	rows, err := q.db.Query(ctx, getAllGiftsOfRecipient, recipientID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []Gift
-	for rows.Next() {
-		var i Gift
-		if err := rows.Scan(
-			&i.ID,
-			&i.Name,
-			&i.Link,
-			&i.TargetAmount,
-			&i.Status,
-			&i.ContractAddress,
-			&i.JettonAddress,
-			&i.EventID,
-			&i.RecipientID,
-			&i.AdminID,
-			&i.CollectedAmount,
-			&i.Description,
-			&i.ImageUrl,
-			&i.LikesAmount,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const getAllParticipantsOfGift = `-- name: GetAllParticipantsOfGift :many
 select id, role, user_id, event_id, is_paid, amount, transaction_hash, participant_id, gift_id
 from Participants
@@ -462,7 +439,7 @@ func (q *Queries) GetEventsInfoByUserID(ctx context.Context, adminID int32) ([]G
 }
 
 const getGiftByContract = `-- name: GetGiftByContract :one
-select id, name, link, target_amount, status, contract_address, jetton_address, event_id, recipient_id, admin_id, collected_amount, description, image_url, likes_amount
+select id, name, link, target_amount, status, contract_address, jetton_address, event_id, recipient_id, admin_id, collected_amount, description, image_url
 from Gifts
 where Gifts.contract_address = $1
 limit 1
@@ -485,7 +462,6 @@ func (q *Queries) GetGiftByContract(ctx context.Context, contractAddress pgtype.
 		&i.CollectedAmount,
 		&i.Description,
 		&i.ImageUrl,
-		&i.LikesAmount,
 	)
 	return i, err
 }
@@ -525,7 +501,7 @@ func (q *Queries) GetGiftRecipientsOfCurrentEvent(ctx context.Context, eventID i
 }
 
 const getGifts = `-- name: GetGifts :many
-select id, name, link, target_amount, status, contract_address, jetton_address, event_id, recipient_id, admin_id, collected_amount, description, image_url, likes_amount from Gifts
+select id, name, link, target_amount, status, contract_address, jetton_address, event_id, recipient_id, admin_id, collected_amount, description, image_url from Gifts
 `
 
 func (q *Queries) GetGifts(ctx context.Context) ([]Gift, error) {
@@ -551,7 +527,73 @@ func (q *Queries) GetGifts(ctx context.Context) ([]Gift, error) {
 			&i.CollectedAmount,
 			&i.Description,
 			&i.ImageUrl,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getGiftsInfoByRecipient = `-- name: GetGiftsInfoByRecipient :many
+select g.id, g.name, g.link, g.target_amount, g.status, g.contract_address, g.jetton_address, g.event_id, g.recipient_id, g.admin_id, g.collected_amount, g.description, g.image_url,
+       (select count(*) from giftlikes where giftlikes.gift_id = g.id) as likes_amount,
+                               exists(select 1 from giftlikes where giftlikes.user_id = $1 and giftlikes.gift_id = g.id)
+from Gifts g
+where g.recipient_id = $2
+`
+
+type GetGiftsInfoByRecipientParams struct {
+	UserID      int32
+	RecipientID int32
+}
+
+type GetGiftsInfoByRecipientRow struct {
+	ID              int32
+	Name            pgtype.Text
+	Link            pgtype.Text
+	TargetAmount    pgtype.Int8
+	Status          string
+	ContractAddress pgtype.Text
+	JettonAddress   pgtype.Text
+	EventID         int32
+	RecipientID     int32
+	AdminID         int32
+	CollectedAmount pgtype.Int8
+	Description     pgtype.Text
+	ImageUrl        pgtype.Text
+	LikesAmount     int64
+	Exists          bool
+}
+
+func (q *Queries) GetGiftsInfoByRecipient(ctx context.Context, arg GetGiftsInfoByRecipientParams) ([]GetGiftsInfoByRecipientRow, error) {
+	rows, err := q.db.Query(ctx, getGiftsInfoByRecipient, arg.UserID, arg.RecipientID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetGiftsInfoByRecipientRow
+	for rows.Next() {
+		var i GetGiftsInfoByRecipientRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Link,
+			&i.TargetAmount,
+			&i.Status,
+			&i.ContractAddress,
+			&i.JettonAddress,
+			&i.EventID,
+			&i.RecipientID,
+			&i.AdminID,
+			&i.CollectedAmount,
+			&i.Description,
+			&i.ImageUrl,
 			&i.LikesAmount,
+			&i.Exists,
 		); err != nil {
 			return nil, err
 		}
@@ -642,6 +684,21 @@ func (q *Queries) RecordTransfer(ctx context.Context, arg RecordTransferParams) 
 		arg.Amount,
 		arg.TransactionHash,
 	)
+	return err
+}
+
+const removeGiftLike = `-- name: RemoveGiftLike :exec
+delete from giftlikes
+WHERE user_id = $1 AND gift_id = $2
+`
+
+type RemoveGiftLikeParams struct {
+	UserID int32
+	GiftID int32
+}
+
+func (q *Queries) RemoveGiftLike(ctx context.Context, arg RemoveGiftLikeParams) error {
+	_, err := q.db.Exec(ctx, removeGiftLike, arg.UserID, arg.GiftID)
 	return err
 }
 

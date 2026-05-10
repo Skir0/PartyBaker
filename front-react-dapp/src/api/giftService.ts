@@ -1,5 +1,5 @@
 import apiClient from './apiClient.ts';
-import type { CreateEventRequest, UpdateEventRequest } from './requests.ts';
+import type { CreateEventRequest, CreateGiftRequest, UpdateEventRequest } from './requests.ts';
 import type { EventResponse } from '../types/event.types.ts';
 
 export const healthCheck = async () => {
@@ -27,20 +27,26 @@ export const createEvent = async (req: CreateEventRequest) => {
     return response.data;
 }
 
+export const createGift = async (req: CreateGiftRequest, eventId: number) => {
+
+    const response = await apiClient.post(`/api/events/${eventId}/suggestGift`, req);
+    return response.data;
+}
+
 export const getEventsOfCurrentUser = async () => {
     const response = await apiClient.get('/api/events/getEvents');
     return response.data;
 }
 
-export const getGiftRecipientsOfEvent = async (eventId: number) => {
+export const getRecipientsOfEvent = async (eventId: number) => {
     console.log("id", eventId)
     const response = await apiClient.get(`/api/events/${eventId}/recipients`);
     return response.data;
 }
 
-export const getAllGiftsOfRecipient = async (eventId: number, recipientId: number) => {
-    console.log("id", recipientId)
+export const getGiftsInfoByRecipient = async (eventId: number, recipientId: number) => {
     const response = await apiClient.get(`/api/events/${eventId}/recipients/${recipientId}/gifts`);
+    console.log("response", response)
     return response.data;
 }
 
@@ -51,4 +57,12 @@ export const updateEvent = async (eventId: number, req: UpdateEventRequest): Pro
 
 export const deleteEvent = async (eventId: number): Promise<void> => {
     await apiClient.delete(`/api/events/${eventId}`);
+}
+
+export const deleteGiftLike = async (giftId: number): Promise<void> => {
+    await apiClient.delete(`/api/gifts/${giftId}/like`);
+}
+
+export const addGiftLike = async (giftId: number): Promise<void> => {
+    await apiClient.post(`/api/gifts/${giftId}/like`);
 }

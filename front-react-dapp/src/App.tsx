@@ -5,6 +5,7 @@ import { NewEventPage } from './pages/NewEventPage.tsx';
 import { CreateEventCard } from './pages/CreateEventCard.tsx';
 import { EventsDashboardPage } from './pages/EventsDashboardPage.tsx';
 import { EventGiftPollPage } from './pages/EventGiftPollPage.tsx';
+import { SuggestGiftPage } from './pages/SuggestGiftPage.tsx';
 
 function App() {
 
@@ -16,6 +17,8 @@ function App() {
                     <Route path="/join" element={<CreateEventCard />} />
                     <Route path="/eventForm" element={<NewEventPage />} />
                     <Route path="/events/:eventId/gifts" element={<EventGiftPollPage />} />
+                    <Route path="/events/:eventId/gifts/suggest" element={<SuggestGiftPage />} />
+
                 </Routes>
             </main>
 

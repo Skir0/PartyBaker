@@ -1,0 +1,81 @@
+
+import { useNavigate } from 'react-router';
+import { useState } from 'react';
+import type { EventFormData } from '../types/event.types.ts';
+import type { CreateEventRequest } from '../api/requests.ts';
+import { createEvent } from '../api/giftService.ts';
+
+export function useNewEvent() {
+
+
+    const navigate = useNavigate();
+
+    const handleBack = () => {
+        console.log('Navigate back');
+        navigate(-1);
+    };
+
+
+    const [formData, setFormData] = useState<EventFormData>({
+        eventName: '',
+        eventDate: '',
+        contributionDeadline: ''
+    });
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [submitMessage, setSubmitMessage] = useState<string | null>(null);
+    const [submitError, setSubmitError] = useState<string | null>(null);
+
+    const handleCreate = async () => {
+        setIsSubmitting(true);
+        setSubmitMessage(null);
+        setSubmitError(null);
+        try {
+            const req: CreateEventRequest = {
+                name: formData.eventName,
+                date: formData.eventDate,
+                deadline: formData.contributionDeadline,
+                admin_id: 12345678
+            };
+
+            await createEvent(req);
+
+            setSubmitMessage('Event created successfully.');
+        } catch (err: unknown) {
+            const errorMessage =
+                typeof err === 'object' &&
+                err !== null &&
+                'response' in err &&
+                typeof err.response === 'object' &&
+                err.response !== null &&
+                'data' in err.response &&
+                typeof err.response.data === 'object' &&
+                err.response.data !== null &&
+                'message' in err.response.data &&
+                typeof err.response.data.message === 'string'
+                    ? err.response.data.message
+                    : err instanceof Error
+                        ? err.message
+                        : 'Failed to create event.';
+
+            setSubmitError(
+                errorMessage
+            );
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleChange = (field: keyof EventFormData) => (e: React.ChangeEvent<HTMLInputElement>) => {
+        setFormData(prev => ({ ...prev, [field]: e.target.value }));
+    };
+
+    return {
+        formData,
+        handleBack,
+        isSubmitting,
+        submitMessage,
+        submitError,
+        handleCreate,
+        handleChange
+    }
+}

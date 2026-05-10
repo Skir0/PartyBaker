@@ -1,3 +1,18 @@
+import type { ReactNode } from 'react';
+
+export interface SuggestGiftFormData {
+    giftName: string;
+    storeWebsite: string;
+    priceTon: number;
+    description: string;
+}
+
+export interface SuggestGiftFormProps {
+    formData: SuggestGiftFormData;
+    onChange: (
+        field: keyof SuggestGiftFormData
+    ) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+}
 
 export interface EventFormData {
     eventName: string;
@@ -30,6 +45,8 @@ export interface MaterialIconProps {
 export interface TopAppBarProps {
     title: string;
     onBack: () => void;
+    /** When set, replaces the default wallet connect control in the app bar. */
+    endSlot?: ReactNode;
 }
 
 export interface BottomButtonProps {
@@ -106,10 +123,10 @@ export interface GiftSuggestion {
         textClassName?: string;
     }>;
     likes: number;
-    liked?: boolean;
+    liked: boolean | false;
 }
 
-export interface Gift {
+export interface GiftInfo {
     id: number;
     name: string;
     link: string;
@@ -119,9 +136,10 @@ export interface Gift {
     target_amount: number;
     collected: number;
     recipient_id: number;
-    likes_amount: number;
     description: string;
     image_url: string;
+    likes_amount: number;
+    liked_by_user: boolean;
 }
 
 export interface RecipientGiftFolder {

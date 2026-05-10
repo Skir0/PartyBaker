@@ -25,23 +25,32 @@ func NewRouter(h *Handler) *chi.Mux {
 
 		// Работа с подарками
 		r.Route("/gifts", func(r chi.Router) {
-			r.Post("/", h.CreateGift)                // Создать (зарегистрировать деплой)
-			r.Get("/{id}", h.GetGiftDetails)         // Детали подарка (из БД)
-			r.Get("/{id}/live", h.GetGiftLiveStatus) // Прямой запрос в TON
+			r.Route("/{giftId}", func(r chi.Router) {
+				r.Get("/", h.GetGiftDetails)        // Детали подарка (из БД)
+				r.Get("/live", h.GetGiftLiveStatus) // Прямой запрос в TON
+				r.Post("/like", h.AddGiftLike)
+				r.Delete("/like", h.RemoveGiftLike)
+			})
 		})
 
 		// Работа с событиями
 		r.Route("/events", func(r chi.Router) {
 			r.Post("/create", h.CreateEvent)
 			r.Get("/getEvents", h.GetEventsByUserID)
-			r.Put("/{id}", h.UpdateEvent)
-			r.Delete("/{id}", h.DeleteEvent)
 
-			// Работа с участниками
-			r.Route("/{id}", func(r chi.Router) {
-				r.Get("/recipients", h.GetGiftRecipientsOfEvent)
-				r.Route("/recipients/{recipient_id}", func(r chi.Router) {
-					r.Get("/gifts", h.GetAllGiftsOfRecipient)
+			r.Route("/{eventId}", func(r chi.Router) {
+
+				// creating gift
+				r.Post("/suggestGift", h.CreateGift)
+
+				// admin controls
+				r.Put("/", h.UpdateEvent)
+				r.Delete("/", h.DeleteEvent)
+
+				// Работа с участниками
+				r.Get("/recipients", h.GetRecipientsOfEvent)
+				r.Route("/recipients/{recipientId}", func(r chi.Router) {
+					r.Get("/gifts", h.GetGiftsInfoByRecipient)
 				})
 			})
 

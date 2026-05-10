@@ -19,11 +19,19 @@ export function useSuggestGift() {
 
     const [formData, setFormData] = useState<SuggestGiftFormData>(initialForm);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
+    const [submitMessage, setSubmitMessage] = useState<string | null>(null);
+
+
 
     const handleChange =
         (field: keyof SuggestGiftFormData) =>
         (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
             setFormData((prev) => ({ ...prev, [field]: e.target.value }));
+            if (submitStatus !== 'idle') {
+                setSubmitStatus('idle');
+                setSubmitMessage(null);
+            }
         };
 
     const handleToolbarBack = () => {
@@ -37,6 +45,19 @@ export function useSuggestGift() {
         try {
             // Wire to POST /api/... when the backend endpoint is available.
             console.info('Post suggestion', { recipientIdFromState, formData });
+            setSubmitStatus('idle');
+            setSubmitMessage(null);
+            if (formData.priceTon <= 0) {
+                setSubmitStatus('error');
+                setSubmitMessage('Price has to be greater than 0');
+                return;
+            }
+
+            if (!recipientIdFromState || !eventIdFromState) {
+                setSubmitStatus('error');
+                setSubmitMessage('Missing event or recipient context. Please return and retry.');
+                return
+            }
 
             const req: CreateGiftRequest = {
                 name: formData.giftName,
@@ -50,10 +71,15 @@ export function useSuggestGift() {
                 image_url: "smth_for_test",
             };
             await createGift(req, eventIdFromState!);
+            setSubmitStatus('success');
+            setSubmitMessage('Suggestion posted successfully.');
+            await new Promise((resolve) => setTimeout(resolve, 900));
             navigate(-1);
         }
         catch (err) {
             console.error(err)
+            setSubmitStatus('error');
+            setSubmitMessage('Failed to post suggestion. Please try again.');
         }
         finally {
             setIsSubmitting(false);
@@ -66,5 +92,7 @@ export function useSuggestGift() {
         handleChange,
         handleToolbarBack,
         handlePostSuggestion,
+        submitStatus,
+        submitMessage
     };
 }

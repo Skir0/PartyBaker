@@ -108,7 +108,7 @@ const createGift = `-- name: CreateGift :one
 insert into Gifts (name, link, target_amount,
                    contract_address, jetton_address,
                    event_id, recipient_id, admin_id, description, image_url)
-values ($1, $2, $3, $4, $5,
+values ($1, $2, $3,$4, $5,
         $6, $7, $8, $9, $10)
 returning id, name, link, target_amount, status, contract_address, jetton_address, event_id, recipient_id, admin_id, collected_amount, description, image_url
 `
@@ -280,6 +280,24 @@ type DeleteEventParams struct {
 
 func (q *Queries) DeleteEvent(ctx context.Context, arg DeleteEventParams) (int64, error) {
 	result, err := q.db.Exec(ctx, deleteEvent, arg.ID, arg.AdminID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const deleteGift = `-- name: DeleteGift :execrows
+delete from gifts
+where id = $1 and admin_id = $2
+`
+
+type DeleteGiftParams struct {
+	ID      int32
+	AdminID int32
+}
+
+func (q *Queries) DeleteGift(ctx context.Context, arg DeleteGiftParams) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteGift, arg.ID, arg.AdminID)
 	if err != nil {
 		return 0, err
 	}
@@ -734,6 +752,53 @@ func (q *Queries) UpdateEvent(ctx context.Context, arg UpdateEventParams) (Event
 		&i.Date,
 		&i.Deadline,
 		&i.AdminID,
+	)
+	return i, err
+}
+
+const updateGift = `-- name: UpdateGift :one
+update gifts
+set name = $1,
+    description = $2,
+    target_amount = $3,
+    link = $4
+where id = $5 and admin_id = $6
+returning id, name, description, target_amount, link
+`
+
+type UpdateGiftParams struct {
+	Name         pgtype.Text
+	Description  pgtype.Text
+	TargetAmount pgtype.Int8
+	Link         pgtype.Text
+	ID           int32
+	AdminID      int32
+}
+
+type UpdateGiftRow struct {
+	ID           int32
+	Name         pgtype.Text
+	Description  pgtype.Text
+	TargetAmount pgtype.Int8
+	Link         pgtype.Text
+}
+
+func (q *Queries) UpdateGift(ctx context.Context, arg UpdateGiftParams) (UpdateGiftRow, error) {
+	row := q.db.QueryRow(ctx, updateGift,
+		arg.Name,
+		arg.Description,
+		arg.TargetAmount,
+		arg.Link,
+		arg.ID,
+		arg.AdminID,
+	)
+	var i UpdateGiftRow
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Description,
+		&i.TargetAmount,
+		&i.Link,
 	)
 	return i, err
 }

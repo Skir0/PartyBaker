@@ -1,21 +1,23 @@
-import { DateFields } from '../forms/DateFields.tsx';
-import { ItemNameField } from '../forms/ItemNameField.tsx';
 import { MaterialIcon } from './MaterialIcon.tsx';
-import type { EventAdminSheetProps } from '../../types/event.types.ts';
+import {
+    type AdminSheetProps,
+} from '../../types/event.types.ts';
+import { ChangeGiftForm } from '../forms/ChangeGiftForm.tsx';
+import { ChangeEventForm } from '../forms/ChangeEventForm.tsx';
 
-export function EventAdminSheet({
-    isOpen,
-    eventTitle,
-    participantCount,
-    formData,
-    isCancelConfirming,
-    onChange,
-    onClose,
-    onSave,
-    onCancelClick,
-    onKeepEvent,
-    onConfirmCancel
-}: EventAdminSheetProps) {
+export function AdminSheet({
+                                    isOpen,
+                                    title,
+                                    type,
+                                    formData,
+                                    isCancelConfirming,
+                                    onChange,
+                                    onClose,
+                                    onSave,
+                                    onCancelClick,
+                                    onKeepEvent,
+                                    onConfirmCancel
+                                }: AdminSheetProps) {
     if (!isOpen) {
         return null;
     }
@@ -36,7 +38,7 @@ export function EventAdminSheet({
                 <div className="flex items-center justify-between px-5 py-3">
                     <div>
                         <h2 className="text-lg font-bold text-on-surface">Admin Controls</h2>
-                        <p className="text-sm text-on-surface-variant">{eventTitle}</p>
+                        <p className="text-sm text-on-surface-variant">{title}</p>
                     </div>
                     <button
                         type="button"
@@ -51,28 +53,24 @@ export function EventAdminSheet({
                     <div className="rounded-xl bg-surface-container-low p-4">
                         <div className="flex items-center justify-between gap-4">
                             <div>
-                                <p className="text-sm font-semibold text-on-surface">Event Access</p>
-                                <p className="text-xs text-on-surface-variant">You can edit or cancel this event.</p>
-                            </div>
-                            <div className="rounded-full bg-secondary-container px-3 py-1 text-xs font-medium text-on-secondary-container">
-                                {participantCount} Participants
+                                <p className="text-sm font-semibold text-on-surface">{type.valueOf().toUpperCase()} Access</p>
+                                <p className="text-xs text-on-surface-variant">You can edit or cancel this {type.valueOf()}.</p>
                             </div>
                         </div>
                     </div>
 
-                    <ItemNameField
-                        value={formData.eventName}
-                        onChange={onChange('eventName')}
-                        placeholder="Enter event name"
-                        item={"Event"}
-                    />
-
-                    <DateFields
-                        eventDate={formData.eventDate}
-                        deadline={formData.contributionDeadline}
-                        onEventDateChange={onChange('eventDate')}
-                        onDeadlineChange={onChange('contributionDeadline')}
-                    />
+                    {type === "gift" && (
+                        <ChangeGiftForm
+                            formData={formData}
+                            onChange={onChange}
+                        />
+                    )}
+                    {type === "event" && (
+                        <ChangeEventForm
+                            formData={formData}
+                            onChange={onChange}
+                        />
+                    )}
 
                     <div className="rounded-xl bg-error-container/30 p-4">
                         {!isCancelConfirming ? (
@@ -97,9 +95,9 @@ export function EventAdminSheet({
                                 <div className="flex items-start gap-3">
                                     <MaterialIcon icon="warning" className="text-error" />
                                     <div>
-                                        <p className="text-sm font-bold text-error">Cancel this event?</p>
+                                        <p className="text-sm font-bold text-error">Cancel this {type.valueOf()}?</p>
                                         <p className="text-[11px] text-on-error-container/80">
-                                            All participants will lose access to this event.
+                                            All participants will lose access to this {type.valueOf()}.
                                         </p>
                                     </div>
                                 </div>

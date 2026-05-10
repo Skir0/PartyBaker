@@ -26,6 +26,11 @@ func NewRouter(h *Handler) *chi.Mux {
 		// Работа с подарками
 		r.Route("/gifts", func(r chi.Router) {
 			r.Route("/{giftId}", func(r chi.Router) {
+
+				// admin controls
+				r.Put("/", h.UpdateGift)
+				r.Delete("/", h.DeleteGift)
+
 				r.Get("/", h.GetGiftDetails)        // Детали подарка (из БД)
 				r.Get("/live", h.GetGiftLiveStatus) // Прямой запрос в TON
 				r.Post("/like", h.AddGiftLike)

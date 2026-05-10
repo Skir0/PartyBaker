@@ -6,13 +6,15 @@ import { GiftSuggestionCard } from '../components/cards/GiftSuggestionCard.tsx';
 import { EventGiftPollNav } from '../components/ui/EventGiftPollNav.tsx';
 import { RecipientFolders } from '../components/ui/RecipientFolders.tsx';
 
-import type {
-    EventResponse,
-
-    RecipientResponse
+import {
+    AdminSheetType,
+    type EventResponse, type GiftFormData,
+    type RecipientResponse
 } from '../types/event.types.ts';
 import { useEventGiftPoll } from '../hooks/useEventGiftPoll.ts';
-
+import { useAdminControls } from '../hooks/useAdminControls.ts';
+import { deleteGift, updateGift } from '../api/giftService.ts';
+import { AdminSheet } from '../components/ui/AdminSheet.tsx';
 
 
 export function EventGiftPollPage() {
@@ -30,8 +32,28 @@ export function EventGiftPollPage() {
         setActiveFolderId,
         activeFolder,
         isLoadingRecipientGifts,
-        handleToggleLike
+        handleToggleLike,
+        giftsByRecipient,
+        setGiftsByRecipient
     } = useEventGiftPoll(params.eventId, routeState);
+
+    const {
+        selectedItem,
+        adminFormData,
+        isCancelConfirming,
+        adminSettingsClick,
+        closeAdminSheet,
+        handleAdminFormChange,
+        handleSaveAdminChanges,
+        handleConfirmCancel,
+        setIsCancelConfirming
+    } = useAdminControls({
+        type: AdminSheetType.GIFT,
+        data: giftsByRecipient,
+        setData: setGiftsByRecipient,
+        onUpdate: updateGift,
+        onDelete: deleteGift
+    });
 
     const subtitle = event
         ? `Voted by the group for ${event.name}. ${event.participants_amount} participants are tracking options before ${event.deadline}.`
@@ -50,7 +72,6 @@ export function EventGiftPollPage() {
                         onSelect={setActiveFolderId}
                     />
                 )}
-
 
 
                 {isLoading && (
@@ -72,7 +93,10 @@ export function EventGiftPollPage() {
                         <section className="space-y-3">
                             {activeFolder?.suggestions.map((suggestion) => (
                                 <GiftSuggestionCard key={suggestion.id} suggestion={suggestion}
-                                                    handleToggleLike={handleToggleLike}/>
+                                                    handleToggleLike={handleToggleLike}
+                                                    onSettingsClick={() => adminSettingsClick(suggestion.id)}
+                                                    // for test
+                                                    isAdmin={true}/>
                             ))}
                         </section>
 
@@ -98,22 +122,39 @@ export function EventGiftPollPage() {
                                     const eventId = event.id;
                                     if (Number.isNaN(recipientId)) return;
                                     navigate(`/events/${params.eventId}/gifts/suggest`, {
-                                        state: { recipientId,  eventId},
+                                        state: { recipientId, eventId }
                                     });
                                 }}
                             />
                         </div>
 
                         <p className="mb-4 mt-8 text-center text-[11px] text-on-surface-variant/60">
-                            Polling ends on {event.deadline}. The selected gift can be finalized after the contribution window closes.
+                            Polling ends on {event.deadline}. The selected gift can be finalized after the contribution
+                            window closes.
                         </p>
                     </>
                 )}
+
+                <AdminSheet
+                    isOpen={selectedItem != null}
+                    title={'Gift'}
+                    isCancelConfirming={isCancelConfirming}
+                    onClose={closeAdminSheet}
+                    onSave={handleSaveAdminChanges}
+                    onCancelClick={closeAdminSheet}
+                    onKeepEvent={() => setIsCancelConfirming(false)}
+                    onConfirmCancel={handleConfirmCancel}
+                    formData={adminFormData}
+                    onChange={handleAdminFormChange}
+                    type={AdminSheetType.GIFT}
+                />
 
 
             </main>
 
             <EventGiftPollNav />
+
+
         </div>
     );
 }

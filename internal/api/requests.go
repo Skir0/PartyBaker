@@ -20,6 +20,13 @@ type UpdateEventRequest struct {
 	Deadline string `json:"deadline"`
 }
 
+type UpdateGiftRequest struct {
+	Name         string `json:"name"`
+	TargetAmount int32  `json:"target_amount"`
+	Description  string `json:"description"`
+	Url          string `json:"url"`
+}
+
 type CreateGiftRequest struct {
 	Name            string `json:"name"`
 	Link            string `json:"link"`
@@ -103,5 +110,24 @@ func ConvertGiftToParams(gift *CreateGiftRequest, eventId int32, adminId int32) 
 		AdminID:         adminId,
 		Description:     parseJsonString(gift.Description),
 		ImageUrl:        parseJsonString(gift.ImageUrl),
+	}, nil
+}
+
+func ConvertUpdateGiftToParams(gift *UpdateGiftRequest, adminID int32, giftID int32) (db.UpdateGiftParams, error) {
+	if gift.Name == "" {
+		return db.UpdateGiftParams{}, errors.New("event name is required")
+	}
+
+	if gift.TargetAmount <= 0 {
+		return db.UpdateGiftParams{}, errors.New("target amount has to be greater than zero")
+	}
+
+	return db.UpdateGiftParams{
+		Name:         parseJsonString(gift.Name),
+		TargetAmount: parseJsonInt(gift.TargetAmount),
+		Description:  parseJsonString(gift.Description),
+		Link:         parseJsonString(gift.Url),
+		AdminID:      adminID,
+		ID:           giftID,
 	}, nil
 }

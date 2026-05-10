@@ -1,17 +1,18 @@
+import type { ChangeEventFormProps } from '../../types/event.types.ts';
 import { ItemNameField } from './ItemNameField.tsx';
 import { DateFields } from './DateFields.tsx';
-import { ProTipCard } from '../cards/ProTipCard.tsx';
-import type {EventFormProps } from '../../types/event.types.ts';
 
-export function EventForm({formData, onChange}: EventFormProps) {
+
+export function ChangeEventForm({formData, onChange}: ChangeEventFormProps) {
 
 
     return (
         <section className="space-y-6">
+
             <ItemNameField
                 value={formData.eventName}
                 onChange={onChange('eventName')}
-                placeholder="Set name"
+                placeholder="Enter event name"
             />
 
             <DateFields
@@ -20,8 +21,6 @@ export function EventForm({formData, onChange}: EventFormProps) {
                 onEventDateChange={onChange('eventDate')}
                 onDeadlineChange={onChange('contributionDeadline')}
             />
-
-            <ProTipCard />
         </section>
     );
 }

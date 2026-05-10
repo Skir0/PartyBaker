@@ -20,6 +20,13 @@ export interface EventFormData {
     contributionDeadline: string;
 }
 
+export interface GiftFormData {
+    name: string;
+    description: string;
+    price: string;
+    url: string;
+}
+
 export interface EventAdminSheetProps {
     isOpen: boolean;
     eventTitle: string;
@@ -33,6 +40,53 @@ export interface EventAdminSheetProps {
     onKeepEvent: () => void;
     onConfirmCancel: () => void;
 }
+
+export interface ChangeGiftFormProps {
+    formData: GiftFormData;
+    onChange: (field: keyof GiftFormData) => (e: React.ChangeEvent<HTMLInputElement>) => void;
+}
+
+export interface ChangeEventFormProps {
+    formData: EventFormData;
+    onChange: (field: keyof EventFormData) => (e: React.ChangeEvent<HTMLInputElement>) => void;
+}
+
+export enum AdminSheetType {
+    GIFT = "gift",
+    EVENT = "event"
+}
+
+type AdminSheetBaseProps = {
+    isOpen: boolean;
+    title: string;
+    participantCount?: number;
+    isCancelConfirming: boolean;
+    onClose: () => void;
+    onSave: () => void;
+    onCancelClick: () => void;
+    onKeepEvent: () => void;
+    onConfirmCancel: () => void;
+};
+
+type GiftAdminSheetVariant = AdminSheetBaseProps & ChangeGiftFormProps & {
+    type: AdminSheetType.GIFT;
+};
+
+type EventAdminSheetVariant = AdminSheetBaseProps & ChangeEventFormProps & {
+    type: AdminSheetType.EVENT;
+};
+
+export type AdminSheetProps = GiftAdminSheetVariant | EventAdminSheetVariant;
+
+
+export interface MaterialIconProps {
+    icon: string;
+    fill?: boolean;
+    className?: string;
+    size?: string;
+    onClick?: () => void;
+}
+
 
 export interface MaterialIconProps {
     icon: string;
@@ -62,10 +116,11 @@ export interface StepHeaderCardProps {
     description: string;
 }
 
-export interface EventNameFieldProps {
+export interface ItemNameFieldProps {
     value: string;
     onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
     placeholder?: string;
+    item: string;
 }
 
 export interface DateFieldsProps {
@@ -126,7 +181,7 @@ export interface GiftSuggestion {
     liked: boolean | false;
 }
 
-export interface GiftInfo {
+export interface GiftInfoResponse {
     id: number;
     name: string;
     link: string;

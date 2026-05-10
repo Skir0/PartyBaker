@@ -203,6 +203,72 @@ func (h *Handler) DeleteEvent(writer http.ResponseWriter, request *http.Request)
 	writer.WriteHeader(http.StatusNoContent)
 }
 
+func (h *Handler) UpdateGift(writer http.ResponseWriter, request *http.Request) {
+	fmt.Println("inside UpdateGift")
+	idStr := chi.URLParam(request, "giftId")
+	giftID, err := strconv.Atoi(idStr)
+	currentUserID, _ := request.Context().Value(UserIDKey).(int64)
+
+	if err != nil {
+		writer.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	giftInfo := &UpdateGiftRequest{}
+	if err := json.NewDecoder(request.Body).Decode(giftInfo); err != nil {
+		writer.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	params, err := ConvertUpdateGiftToParams(giftInfo,
+		int32(currentUserID), int32(giftID))
+	if err != nil {
+		fmt.Println(err)
+		writer.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	err = h.repo.UpdateGift(request.Context(), params)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	writer.WriteHeader(http.StatusOK)
+}
+
+func (h *Handler) DeleteGift(writer http.ResponseWriter, request *http.Request) {
+	idParam := chi.URLParam(request, "giftId")
+	giftID, err := strconv.Atoi(idParam)
+	if err != nil {
+		writer.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(writer).Encode("invalid gift id")
+		return
+	}
+
+	currentUserID, ok := request.Context().Value(UserIDKey).(int64)
+	if !ok {
+		writer.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	err = h.repo.DeleteGift(request.Context(), db.DeleteGiftParams{
+		ID:      int32(giftID),
+		AdminID: int32(currentUserID),
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			writer.WriteHeader(http.StatusForbidden)
+			json.NewEncoder(writer).Encode("gift not found or access denied")
+			return
+		}
+
+		writer.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(writer).Encode(err.Error())
+		return
+	}
+
+	writer.WriteHeader(http.StatusNoContent)
+}
+
 func (h *Handler) GetGiftDetails(writer http.ResponseWriter, request *http.Request) {
 
 }

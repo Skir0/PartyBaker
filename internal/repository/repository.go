@@ -169,6 +169,26 @@ func (r *Repository) DeleteEvent(ctx context.Context, params db.DeleteEventParam
 	return nil
 }
 
+func (r *Repository) UpdateGift(ctx context.Context, params db.UpdateGiftParams) error {
+	_, err := r.query.UpdateGift(ctx, params)
+	if err != nil {
+		return fmt.Errorf("database error: %w", err)
+
+	}
+	return nil
+}
+
+func (r *Repository) DeleteGift(ctx context.Context, params db.DeleteGiftParams) error {
+	rowsAffected, err := r.query.DeleteGift(ctx, params)
+	if err != nil {
+		return fmt.Errorf("error deleting event in db: %w", err)
+	}
+	if rowsAffected == 0 {
+		return pgx.ErrNoRows
+	}
+	return nil
+}
+
 func (r *Repository) ProcessTransfer(ctx context.Context, contractAddress pgtype.Text,
 	userWallerAddress pgtype.Text, transferAmount pgtype.Int8, txHash pgtype.Text) error {
 

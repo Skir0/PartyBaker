@@ -6,6 +6,9 @@ import { BottomNavBar } from '../components/ui/BottomNavBar.tsx';
 import { EventAdminSheet } from '../components/ui/EventAdminSheet.tsx';
 import { MaterialIcon } from '../components/ui/MaterialIcon.tsx';
 import { useEventsDashboard } from '../hooks/useEventsDashboard.ts';
+import { useAdminControls } from '../hooks/useAdminControls.ts';
+import { AdminSheetType } from '../types/event.types.ts';
+import { deleteEvent, updateEvent } from '../api/giftService.ts';
 
 export function EventsDashboardPage() {
 
@@ -13,18 +16,29 @@ export function EventsDashboardPage() {
         isLoading,
         error,
         events,
-        selectedEvent,
+        setEvents,
+        summaryStats,
+        openEventGiftPoll
+    } = useEventsDashboard();
+
+    const {
+        selectedItem,
         adminFormData,
         isCancelConfirming,
         adminSettingsClick,
         handleAdminFormChange,
         handleSaveAdminChanges,
-        handleConfirmCancelEvent,
-        openEventGiftPoll,
+        handleConfirmCancel,
         closeAdminSheet,
         setIsCancelConfirming,
-        summaryStats,
-    } = useEventsDashboard();
+    } = useAdminControls({
+        type: AdminSheetType.EVENT,
+        data: events,
+        setData: setEvents,
+        onUpdate: updateEvent,
+        onDelete: deleteEvent
+    });
+
 
 
     return (
@@ -94,9 +108,9 @@ export function EventsDashboardPage() {
             <BottomNavBar />
 
             <EventAdminSheet
-                isOpen={selectedEvent !== null}
-                eventTitle={selectedEvent?.name ?? ''}
-                participantCount={selectedEvent?.participants_amount ?? 0}
+                isOpen={selectedItem !== null}
+                eventTitle={selectedItem?.name ?? ''}
+                participantCount={selectedItem?.participants_amount ?? 0}
                 formData={adminFormData}
                 isCancelConfirming={isCancelConfirming}
                 onChange={handleAdminFormChange}
@@ -104,7 +118,7 @@ export function EventsDashboardPage() {
                 onSave={handleSaveAdminChanges}
                 onCancelClick={() => setIsCancelConfirming(true)}
                 onKeepEvent={() => setIsCancelConfirming(false)}
-                onConfirmCancel={handleConfirmCancelEvent}
+                onConfirmCancel={handleConfirmCancel}
             />
         </div>
     );

@@ -1,11 +1,11 @@
 import { MaterialIcon } from '../ui/MaterialIcon.tsx';
-import type { EventNameFieldProps } from '../../types/event.types.ts';
+import type { ItemNameFieldProps } from '../../types/event.types.ts';
 
-export function EventNameField({ value, onChange, placeholder }: EventNameFieldProps) {
+export function ItemNameField({ value, onChange, placeholder, item }: ItemNameFieldProps) {
     return (
         <div className="space-y-2">
             <label className="text-xs font-semibold text-on-surface-variant ml-1">
-                Event Name
+                {item.valueOf()[0].toUpperCase()+item.valueOf().substring(1)} Name
             </label>
             <div className="group flex items-center bg-surface-container-lowest rounded-lg px-4 py-3.5 transition-all focus-within:ring-1 focus-within:ring-primary shadow-sm border border-outline-variant/10">
                 <input

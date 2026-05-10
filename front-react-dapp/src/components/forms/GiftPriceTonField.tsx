@@ -1,7 +1,7 @@
 import { MaterialIcon } from '../ui/MaterialIcon.tsx';
 
 interface GiftPriceTonFieldProps {
-    value: string;
+    value: number;
     onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 

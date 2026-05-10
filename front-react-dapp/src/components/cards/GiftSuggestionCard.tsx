@@ -3,10 +3,12 @@ import type { GiftSuggestion } from '../../types/event.types.ts';
 
 interface GiftSuggestionCardProps {
     suggestion: GiftSuggestion;
-    handleToggleLike: (giftId: number, currentlyLiked: boolean) => Promise<void>
+    handleToggleLike: (giftId: number, currentlyLiked: boolean) => Promise<void>;
+    onSettingsClick: (giftId: number) => void;
+    isAdmin: boolean;
 }
 
-export function GiftSuggestionCard({ suggestion, handleToggleLike }: GiftSuggestionCardProps) {
+export function GiftSuggestionCard({ suggestion, handleToggleLike, onSettingsClick, isAdmin }: GiftSuggestionCardProps) {
 
     return (
         <article className="flex items-start gap-4 rounded-xl border border-outline-variant/5 bg-surface-container-lowest p-3 shadow-sm">
@@ -52,6 +54,18 @@ export function GiftSuggestionCard({ suggestion, handleToggleLike }: GiftSuggest
                         <MaterialIcon icon="favorite" fill={suggestion.liked} size="text-[18px]" />
                         <span>{suggestion.likes}</span>
                     </button>
+                    {isAdmin && (
+                        <button
+                            onClick={(e) => {
+
+                                e.stopPropagation(); // don't trigger card click
+                                onSettingsClick?.();
+                            }}
+                            className="flex items-center justify-center w-7 h-7 rounded-full text-on-surface-variant hover:bg-surface-container active:bg-surface-container-high transition-colors"
+                        >
+                            <MaterialIcon icon="settings" size="text-[18px]" />
+                        </button>
+                    )}
                 </div>
             </div>
         </article>

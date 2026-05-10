@@ -141,8 +141,21 @@ set name = $1,
 where id = $4 and admin_id = $5
 returning id, name, date, deadline, admin_id;
 
+-- name: UpdateGift :one
+update gifts
+set name = $1,
+    description = $2,
+    target_amount = $3,
+    link = $4
+where id = $5 and admin_id = $6
+returning id, name, description, target_amount, link;
+
 -- name: DeleteEvent :execrows
 delete from events
+where id = $1 and admin_id = $2;
+
+-- name: DeleteGift :execrows
+delete from gifts
 where id = $1 and admin_id = $2;
 
 -- name: GetGiftRecipientsOfCurrentEvent :many

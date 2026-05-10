@@ -11,6 +11,13 @@ export interface UpdateEventRequest {
     deadline: string;
 }
 
+export interface UpdateGiftRequest {
+    name: string;
+    target_amount: number;
+    description: string;
+    url: string;
+}
+
 export interface CreateGiftRequest {
     name: string;
     link: string;

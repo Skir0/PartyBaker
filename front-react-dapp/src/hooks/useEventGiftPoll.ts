@@ -10,7 +10,7 @@ import {
 
 import type {
     EventResponse,
-    GiftInfo,
+    GiftInfoResponse,
     GiftSuggestion,
     RecipientGiftFolder,
     RecipientResponse
@@ -21,7 +21,7 @@ function formatGiftPrice(value: number): string {
     return `$${value}`;
 }
 
-function mapGiftToSuggestion(gift: GiftInfo): GiftSuggestion {
+function mapGiftToSuggestion(gift: GiftInfoResponse): GiftSuggestion {
     return {
         id: gift.id,
         title: gift.name,
@@ -42,7 +42,7 @@ function getRecipientDisplayName(recipient: RecipientResponse): string {
 
 function buildRecipientFolders(
     recipients: RecipientResponse[],
-    giftsByRecipient: Record<number, GiftInfo[]>
+    giftsByRecipient: Record<number, GiftInfoResponse[]>
 ): RecipientGiftFolder[] {
 
     if (recipients.length > 0) {
@@ -76,7 +76,7 @@ export function useEventGiftPoll(eventId: string | undefined, routeState: any) {
         return localStorage.getItem(`eventGiftPoll.activeFolder.${eventId}`) ?? '';
     });
     const [recipients, setRecipients] = useState<RecipientResponse[]>(routeState?.recipientsOfEvent ?? []);
-    const [giftsByRecipient, setGiftsByRecipient] = useState<Record<number, GiftInfo[]>>({});
+    const [giftsByRecipient, setGiftsByRecipient] = useState<Record<number, GiftInfoResponse[]>>({});
     const [isLoadingRecipientGifts, setIsLoadingRecipientGifts] = useState<boolean>(false);
 
 
@@ -234,7 +234,7 @@ export function useEventGiftPoll(eventId: string | undefined, routeState: any) {
 
                 if (cancelled) return;
 
-                const giftsMap: Record<number, GiftInfo[]> = {};
+                const giftsMap: Record<number, GiftInfoResponse[]> = {};
                 for (const [recipientId, gifts] of results) {
                     giftsMap[recipientId] = gifts;
                 }
@@ -266,6 +266,8 @@ export function useEventGiftPoll(eventId: string | undefined, routeState: any) {
         setActiveFolderId,
         activeFolder,
         isLoadingRecipientGifts,
-        handleToggleLike
+        handleToggleLike,
+        giftsByRecipient,
+        setGiftsByRecipient,
     };
 }

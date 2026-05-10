@@ -1,6 +1,6 @@
 import apiClient from './apiClient.ts';
-import type { CreateEventRequest, CreateGiftRequest, UpdateEventRequest } from './requests.ts';
-import type { EventResponse } from '../types/event.types.ts';
+import type { CreateEventRequest, CreateGiftRequest, UpdateEventRequest, UpdateGiftRequest } from './requests.ts';
+import type { EventResponse, GiftInfoResponse } from '../types/event.types.ts';
 
 export const healthCheck = async () => {
 
@@ -57,6 +57,15 @@ export const updateEvent = async (eventId: number, req: UpdateEventRequest): Pro
 
 export const deleteEvent = async (eventId: number): Promise<void> => {
     await apiClient.delete(`/api/events/${eventId}`);
+}
+
+export const updateGift = async (giftId: number, req: UpdateGiftRequest): Promise<GiftInfoResponse> => {
+    const response = await apiClient.put(`/api/gifts/${giftId}`, req);
+    return response.data;
+}
+
+export const deleteGift = async (giftId: number): Promise<void> => {
+    await apiClient.delete(`/api/gifts/${giftId}`);
 }
 
 export const deleteGiftLike = async (giftId: number): Promise<void> => {

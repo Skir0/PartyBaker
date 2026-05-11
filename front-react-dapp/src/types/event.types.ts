@@ -46,19 +46,14 @@ export interface ChangeGiftFormProps {
     onChange: (field: keyof GiftFormData) => (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
-export interface ChangeEventFormProps {
-    formData: EventFormData;
-    onChange: (field: keyof EventFormData) => (e: React.ChangeEvent<HTMLInputElement>) => void;
-}
 
-export enum AdminSheetType {
-    GIFT = "gift",
-    EVENT = "event"
+export enum SheetType {
+    GIFT = "Gift",
+    EVENT = "Event"
 }
 
 type AdminSheetBaseProps = {
     isOpen: boolean;
-    title: string;
     participantCount?: number;
     isCancelConfirming: boolean;
     onClose: () => void;
@@ -69,11 +64,11 @@ type AdminSheetBaseProps = {
 };
 
 type GiftAdminSheetVariant = AdminSheetBaseProps & ChangeGiftFormProps & {
-    type: AdminSheetType.GIFT;
+    type: SheetType.GIFT;
 };
 
-type EventAdminSheetVariant = AdminSheetBaseProps & ChangeEventFormProps & {
-    type: AdminSheetType.EVENT;
+type EventAdminSheetVariant = AdminSheetBaseProps & EventFormProps & {
+    type: SheetType.EVENT;
 };
 
 export type AdminSheetProps = GiftAdminSheetVariant | EventAdminSheetVariant;
@@ -116,12 +111,7 @@ export interface StepHeaderCardProps {
     description: string;
 }
 
-export interface ItemNameFieldProps {
-    value: string;
-    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    placeholder?: string;
-    item: string;
-}
+
 
 export interface DateFieldsProps {
     eventDate: string;

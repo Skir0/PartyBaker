@@ -7,9 +7,9 @@ import { EventGiftPollNav } from '../components/ui/EventGiftPollNav.tsx';
 import { RecipientFolders } from '../components/ui/RecipientFolders.tsx';
 
 import {
-    AdminSheetType,
-    type EventResponse, type GiftFormData,
-    type RecipientResponse
+    SheetType,
+    type EventResponse,
+    type RecipientResponse, type GiftFormData, type GiftInfoResponse
 } from '../types/event.types.ts';
 import { useEventGiftPoll } from '../hooks/useEventGiftPoll.ts';
 import { useAdminControls } from '../hooks/useAdminControls.ts';
@@ -34,7 +34,8 @@ export function EventGiftPollPage() {
         isLoadingRecipientGifts,
         handleToggleLike,
         giftsByRecipient,
-        setGiftsByRecipient
+        setGiftsByRecipient,
+        activeRecipient
     } = useEventGiftPoll(params.eventId, routeState);
 
     const {
@@ -48,16 +49,28 @@ export function EventGiftPollPage() {
         handleConfirmCancel,
         setIsCancelConfirming
     } = useAdminControls({
-        type: AdminSheetType.GIFT,
+        type: SheetType.GIFT,
         data: giftsByRecipient,
         setData: setGiftsByRecipient,
         onUpdate: updateGift,
-        onDelete: deleteGift
+        onDelete: deleteGift,
+        recipientId: activeRecipient?.id ?? 0
     });
 
     const subtitle = event
         ? `Voted by the group for ${event.name}. ${event.participants_amount} participants are tracking options before ${event.deadline}.`
         : 'Loading event details.';
+
+    function checkAdmin(giftId: number): boolean {
+        const recipientId = activeRecipient?.id;
+        if (recipientId == null) return false;
+
+        const gift = giftsByRecipient[recipientId]?.find((g) => g.id === giftId);
+        if (!gift) return false;
+
+        const currentUserId = 12345678;
+        return gift.admin_id === currentUserId;
+    }
 
     return (
         <div className="min-h-screen bg-background text-on-surface">
@@ -96,7 +109,7 @@ export function EventGiftPollPage() {
                                                     handleToggleLike={handleToggleLike}
                                                     onSettingsClick={() => adminSettingsClick(suggestion.id)}
                                                     // for test
-                                                    isAdmin={true}/>
+                                                    isAdmin={checkAdmin(suggestion.id)}/>
                             ))}
                         </section>
 
@@ -116,9 +129,7 @@ export function EventGiftPollPage() {
                             <SuggestGiftButton
                                 onClick={() => {
                                     if (!params.eventId || !activeFolder?.id) return;
-                                    const prefix = 'recipient-';
-                                    if (!activeFolder.id.startsWith(prefix)) return;
-                                    const recipientId = Number(activeFolder.id.slice(prefix.length));
+                                    const recipientId = activeRecipient.id;
                                     const eventId = event.id;
                                     if (Number.isNaN(recipientId)) return;
                                     navigate(`/events/${params.eventId}/gifts/suggest`, {
@@ -137,19 +148,16 @@ export function EventGiftPollPage() {
 
                 <AdminSheet
                     isOpen={selectedItem != null}
-                    title={'Gift'}
                     isCancelConfirming={isCancelConfirming}
                     onClose={closeAdminSheet}
                     onSave={handleSaveAdminChanges}
-                    onCancelClick={closeAdminSheet}
+                    onCancelClick={() => setIsCancelConfirming(true)}
                     onKeepEvent={() => setIsCancelConfirming(false)}
                     onConfirmCancel={handleConfirmCancel}
-                    formData={adminFormData}
+                    formData={adminFormData as GiftFormData}
                     onChange={handleAdminFormChange}
-                    type={AdminSheetType.GIFT}
+                    type={SheetType.GIFT}
                 />
-
-
             </main>
 
             <EventGiftPollNav />

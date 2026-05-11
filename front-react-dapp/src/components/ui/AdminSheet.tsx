@@ -3,11 +3,10 @@ import {
     type AdminSheetProps,
 } from '../../types/event.types.ts';
 import { ChangeGiftForm } from '../forms/ChangeGiftForm.tsx';
-import { ChangeEventForm } from '../forms/ChangeEventForm.tsx';
+import { EventForm } from '../forms/EventForm.tsx';
 
 export function AdminSheet({
                                     isOpen,
-                                    title,
                                     type,
                                     formData,
                                     isCancelConfirming,
@@ -38,7 +37,6 @@ export function AdminSheet({
                 <div className="flex items-center justify-between px-5 py-3">
                     <div>
                         <h2 className="text-lg font-bold text-on-surface">Admin Controls</h2>
-                        <p className="text-sm text-on-surface-variant">{title}</p>
                     </div>
                     <button
                         type="button"
@@ -53,20 +51,20 @@ export function AdminSheet({
                     <div className="rounded-xl bg-surface-container-low p-4">
                         <div className="flex items-center justify-between gap-4">
                             <div>
-                                <p className="text-sm font-semibold text-on-surface">{type.valueOf().toUpperCase()} Access</p>
-                                <p className="text-xs text-on-surface-variant">You can edit or cancel this {type.valueOf()}.</p>
+                                <p className="text-sm font-semibold text-on-surface">{type} Access</p>
+                                <p className="text-xs text-on-surface-variant">You can edit or cancel this {type}.</p>
                             </div>
                         </div>
                     </div>
 
-                    {type === "gift" && (
+                    {type === "Gift" && (
                         <ChangeGiftForm
                             formData={formData}
                             onChange={onChange}
                         />
                     )}
-                    {type === "event" && (
-                        <ChangeEventForm
+                    {type === "Event" && (
+                        <EventForm
                             formData={formData}
                             onChange={onChange}
                         />
@@ -82,7 +80,7 @@ export function AdminSheet({
                                 <div className="flex items-center gap-3">
                                     <MaterialIcon icon="cancel" className="text-error" />
                                     <div>
-                                        <div className="text-sm font-bold text-error">Cancel Event</div>
+                                        <div className="text-sm font-bold text-error">Cancel {type}</div>
                                         <div className="text-[11px] text-on-error-container/70">
                                             This action cannot be undone.
                                         </div>
@@ -95,9 +93,9 @@ export function AdminSheet({
                                 <div className="flex items-start gap-3">
                                     <MaterialIcon icon="warning" className="text-error" />
                                     <div>
-                                        <p className="text-sm font-bold text-error">Cancel this {type.valueOf()}?</p>
+                                        <p className="text-sm font-bold text-error">Cancel this {type}</p>
                                         <p className="text-[11px] text-on-error-container/80">
-                                            All participants will lose access to this {type.valueOf()}.
+                                            All participants will lose access to this {type}.
                                         </p>
                                     </div>
                                 </div>
@@ -107,7 +105,7 @@ export function AdminSheet({
                                         onClick={onKeepEvent}
                                         className="flex-1 rounded-xl bg-surface-container-lowest px-4 py-3 text-sm font-semibold text-on-surface transition-transform active:scale-[0.98]"
                                     >
-                                        Keep Event
+                                        Keep {type}
                                     </button>
                                     <button
                                         type="button"

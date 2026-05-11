@@ -210,6 +210,7 @@ export function useEventGiftPoll(eventId: string | undefined, routeState: any) {
         [activeFolderId, recipientFolders]
     );
 
+
     const activeRecipient = useMemo(
         () => recipients.find((recipient) => `recipient-${recipient.id}` === activeFolderId) ?? recipients[0] ?? null,
         [activeFolderId, recipients]
@@ -269,5 +270,6 @@ export function useEventGiftPoll(eventId: string | undefined, routeState: any) {
         handleToggleLike,
         giftsByRecipient,
         setGiftsByRecipient,
+        activeRecipient
     };
 }

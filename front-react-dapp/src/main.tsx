@@ -12,7 +12,6 @@ const manifestUrl = 'https://tonconnect-sdk-demo-dapp.vercel.app/tonconnect-mani
 createRoot(document.getElementById('root')!).render(
     <TonConnectUIProvider manifestUrl={manifestUrl}>
         <BrowserRouter>
-
             <App />
         </BrowserRouter>
     </TonConnectUIProvider>

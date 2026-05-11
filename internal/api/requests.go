@@ -119,6 +119,7 @@ func ConvertUpdateGiftToParams(gift *UpdateGiftRequest, adminID int32, giftID in
 	}
 
 	if gift.TargetAmount <= 0 {
+		fmt.Println(gift.TargetAmount)
 		return db.UpdateGiftParams{}, errors.New("target amount has to be greater than zero")
 	}
 

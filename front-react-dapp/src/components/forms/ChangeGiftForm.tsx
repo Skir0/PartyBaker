@@ -1,5 +1,5 @@
-import { ItemNameField } from './ItemNameField.tsx';
-import type { ChangeGiftFormProps } from '../../types/event.types.ts';
+import { ItemField } from './ItemField.tsx';
+import { type ChangeGiftFormProps, SheetType } from '../../types/event.types.ts';
 
 
 export function ChangeGiftForm({formData, onChange}: ChangeGiftFormProps) {
@@ -8,33 +8,38 @@ export function ChangeGiftForm({formData, onChange}: ChangeGiftFormProps) {
     return (
         <section>
 
-            <ItemNameField
+            <ItemField
                 value={formData.name}
                 onChange={onChange('name')}
-                placeholder="Enter gift name"
-                item={"Gift"}
+                propertyName="Name"
+                item={SheetType.GIFT}
+                type={"text"}
             />
 
-            <ItemNameField
+            <ItemField
                 value={formData.price}
                 onChange={onChange('price')}
-                placeholder="Enter gift price"
-                item={"Gift"}
+                propertyName="Price"
+                item={SheetType.GIFT}
+                type={"number"}
+
             />
 
-            <ItemNameField
+            <ItemField
                 value={formData.description}
                 onChange={onChange('description')}
-                placeholder="Enter gift description"
-                item={"Gift"}
+                propertyName="Description"
+                item={SheetType.GIFT}
+                type={"text"}
             />
 
 
-            <ItemNameField
+            <ItemField
                 value={formData.url}
                 onChange={onChange('url')}
-                placeholder="Enter gift url"
-                item={"Gift"}
+                propertyName="Url"
+                item={SheetType.GIFT}
+                type={"url"}
             />
         </section>
     );

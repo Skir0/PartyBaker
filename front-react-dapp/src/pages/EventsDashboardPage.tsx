@@ -3,12 +3,12 @@ import { EventsDashboardHeader } from '../components/ui/EventsDashboardHeader.ts
 import { SummaryStatCard } from '../components/cards/SummaryStatCard.tsx';
 import { EventOverviewCard } from '../components/cards/EventOverviewCard.tsx';
 import { BottomNavBar } from '../components/ui/BottomNavBar.tsx';
-import { EventAdminSheet } from '../components/ui/EventAdminSheet.tsx';
 import { MaterialIcon } from '../components/ui/MaterialIcon.tsx';
 import { useEventsDashboard } from '../hooks/useEventsDashboard.ts';
 import { useAdminControls } from '../hooks/useAdminControls.ts';
-import { AdminSheetType } from '../types/event.types.ts';
+import { SheetType } from '../types/event.types.ts';
 import { deleteEvent, updateEvent } from '../api/giftService.ts';
+import { AdminSheet } from '../components/ui/AdminSheet.tsx';
 
 export function EventsDashboardPage() {
 
@@ -30,15 +30,14 @@ export function EventsDashboardPage() {
         handleSaveAdminChanges,
         handleConfirmCancel,
         closeAdminSheet,
-        setIsCancelConfirming,
+        setIsCancelConfirming
     } = useAdminControls({
-        type: AdminSheetType.EVENT,
+        type: SheetType.EVENT,
         data: events,
         setData: setEvents,
         onUpdate: updateEvent,
         onDelete: deleteEvent
     });
-
 
 
     return (
@@ -87,7 +86,6 @@ export function EventsDashboardPage() {
                     ))}
 
 
-
                     <Link to="/eventForm" className="mt-1 block">
                         <button
                             className="flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-primary text-[16px] font-semibold text-on-primary shadow-lg shadow-primary/20 transition-transform active:scale-[0.98]">
@@ -107,10 +105,14 @@ export function EventsDashboardPage() {
 
             <BottomNavBar />
 
-            <EventAdminSheet
+
+            <AdminSheet
                 isOpen={selectedItem !== null}
-                eventTitle={selectedItem?.name ?? ''}
-                participantCount={selectedItem?.participants_amount ?? 0}
+                participantCount={
+                    selectedItem != null && 'participants_amount' in selectedItem
+                        ? selectedItem.participants_amount
+                        : 0
+                }
                 formData={adminFormData}
                 isCancelConfirming={isCancelConfirming}
                 onChange={handleAdminFormChange}
@@ -119,7 +121,11 @@ export function EventsDashboardPage() {
                 onCancelClick={() => setIsCancelConfirming(true)}
                 onKeepEvent={() => setIsCancelConfirming(false)}
                 onConfirmCancel={handleConfirmCancel}
+                type={SheetType.EVENT}
             />
+
+
         </div>
-    );
+    )
+        ;
 }

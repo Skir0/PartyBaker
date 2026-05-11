@@ -1,17 +1,18 @@
-import { ItemNameField } from './ItemNameField.tsx';
+import { ItemField } from './ItemField.tsx';
 import { DateFields } from './DateFields.tsx';
 import { ProTipCard } from '../cards/ProTipCard.tsx';
-import type {EventFormProps } from '../../types/event.types.ts';
+import { type EventFormProps, SheetType } from '../../types/event.types.ts';
 
 export function EventForm({formData, onChange}: EventFormProps) {
 
 
     return (
         <section className="space-y-6">
-            <ItemNameField
+            <ItemField
                 value={formData.eventName}
                 onChange={onChange('eventName')}
-                placeholder="Set name"
+                propertyName="name"
+                item={SheetType.EVENT}
             />
 
             <DateFields

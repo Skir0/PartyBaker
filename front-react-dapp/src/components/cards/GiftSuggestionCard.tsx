@@ -59,7 +59,8 @@ export function GiftSuggestionCard({ suggestion, handleToggleLike, onSettingsCli
                             onClick={(e) => {
 
                                 e.stopPropagation(); // don't trigger card click
-                                onSettingsClick?.();
+                                // maybe this
+                                onSettingsClick?.(suggestion.id);
                             }}
                             className="flex items-center justify-center w-7 h-7 rounded-full text-on-surface-variant hover:bg-surface-container active:bg-surface-container-high transition-colors"
                         >

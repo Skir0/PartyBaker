@@ -2,6 +2,7 @@ import { HeaderBar } from '../components/ui/HeaderBar.tsx';
 import { JoinExistingEventCard } from '../components/cards/JoinExistingEventCard.tsx';
 import { OrDivider } from '../components/ui/OrDivider.tsx';
 import { CreateNewEventCard } from '../components/cards/CreateNewEventCard.tsx';
+import { BottomNavBar } from '../components/ui/BottomNavBar.tsx';
 
 
 export function CreateEventCard() {
@@ -22,6 +23,7 @@ export function CreateEventCard() {
                     <div className="w-24 h-24 bg-gradient-to-tr from-primary/20 to-secondary-container/20 rounded-full blur-2xl"></div>
                 </div>
             </main>
+            <BottomNavBar/>
         </div>
     );
 }

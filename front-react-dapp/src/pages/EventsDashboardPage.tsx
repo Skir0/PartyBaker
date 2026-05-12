@@ -39,7 +39,6 @@ export function EventsDashboardPage() {
         onDelete: deleteEvent
     });
 
-
     return (
         <div className="min-h-screen bg-background text-on-background">
             <EventsDashboardHeader />

@@ -66,7 +66,6 @@ export function useSuggestGift() {
                 contract_address: "smth_for_test",
                 jetton_address: "smth_for_test",
                 recipient_id: recipientIdFromState!,
-                // for test
                 description: formData.description,
                 image_url: "smth_for_test",
             };

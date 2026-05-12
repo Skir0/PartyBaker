@@ -6,9 +6,12 @@ const apiClient = axios.create({
 
     baseURL: '/',
     headers: {
-        'X-TG-Data': WebApp.initData
+        'X-TG-Data': WebApp.initData,
+        "ngrok-skip-browser-warning": true
     }
+
 })
+
 
 
 

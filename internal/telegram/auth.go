@@ -27,9 +27,9 @@ func Validate(initData string, botToken string) (int64, error) {
 	// 1. Парсим строку запроса
 
 	// ВРЕМЕННО для тестов в браузере:
-	if initData == "" {
-		return 12345678, nil // Твой ID для тестов
-	}
+	//if initData == "" {
+	//	return 12345678, nil // Твой ID для тестов
+	//}
 	params, err := url.ParseQuery(initData)
 	if err != nil {
 		return 0, fmt.Errorf("failed to parse initData: %w", err)

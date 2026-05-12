@@ -9,12 +9,13 @@ import { RecipientFolders } from '../components/ui/RecipientFolders.tsx';
 import {
     SheetType,
     type EventResponse,
-    type RecipientResponse, type GiftFormData, type GiftInfoResponse
+    type RecipientResponse, type GiftFormData,
 } from '../types/event.types.ts';
 import { useEventGiftPoll } from '../hooks/useEventGiftPoll.ts';
 import { useAdminControls } from '../hooks/useAdminControls.ts';
 import { deleteGift, updateGift } from '../api/giftService.ts';
 import { AdminSheet } from '../components/ui/AdminSheet.tsx';
+import { useAuth } from '../contexts/AuthContext.tsx';
 
 
 export function EventGiftPollPage() {
@@ -57,6 +58,8 @@ export function EventGiftPollPage() {
         recipientId: activeRecipient?.id ?? 0
     });
 
+    const userId = useAuth().user?.id! || 12345678;
+
     const subtitle = event
         ? `Voted by the group for ${event.name}. ${event.participants_amount} participants are tracking options before ${event.deadline}.`
         : 'Loading event details.';
@@ -67,9 +70,9 @@ export function EventGiftPollPage() {
 
         const gift = giftsByRecipient[recipientId]?.find((g) => g.id === giftId);
         if (!gift) return false;
+        console.log("id", userId);
 
-        const currentUserId = 12345678;
-        return gift.admin_id === currentUserId;
+        return gift.admin_id === userId;
     }
 
     return (
@@ -108,7 +111,6 @@ export function EventGiftPollPage() {
                                 <GiftSuggestionCard key={suggestion.id} suggestion={suggestion}
                                                     handleToggleLike={handleToggleLike}
                                                     onSettingsClick={() => adminSettingsClick(suggestion.id)}
-                                                    // for test
                                                     isAdmin={checkAdmin(suggestion.id)}/>
                             ))}
                         </section>

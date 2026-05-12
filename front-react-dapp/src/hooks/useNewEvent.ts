@@ -4,6 +4,7 @@ import { useState } from 'react';
 import type { EventFormData } from '../types/event.types.ts';
 import type { CreateEventRequest } from '../api/requests.ts';
 import { createEvent } from '../api/giftService.ts';
+import { useAuth } from '../contexts/AuthContext.tsx';
 
 export function useNewEvent() {
 
@@ -25,6 +26,8 @@ export function useNewEvent() {
     const [submitMessage, setSubmitMessage] = useState<string | null>(null);
     const [submitError, setSubmitError] = useState<string | null>(null);
 
+    const userId = useAuth().user?.id!;
+
     const handleCreate = async () => {
         setIsSubmitting(true);
         setSubmitMessage(null);
@@ -34,7 +37,7 @@ export function useNewEvent() {
                 name: formData.eventName,
                 date: formData.eventDate,
                 deadline: formData.contributionDeadline,
-                admin_id: 12345678
+                admin_id: userId
             };
 
             await createEvent(req);

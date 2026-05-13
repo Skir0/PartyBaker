@@ -2,6 +2,7 @@ package repository
 
 import (
 	"PartyBaker/internal/db"
+	"PartyBaker/internal/utils"
 
 	"context"
 	"fmt"
@@ -24,6 +25,20 @@ func NewRepository(pool *pgxpool.Pool) *Repository {
 	}
 }
 
+func (r *Repository) GetEventJoinCode(ctx context.Context) (pgtype.Text, error) {
+	for i := 0; i < 5; i++ {
+		code, err := utils.GenerateCode()
+		if err != nil {
+			fmt.Println(err)
+		}
+		exists, _ := r.query.CheckEventJoinCodeExists(ctx, utils.ParseJsonString(code))
+		if !exists {
+			return utils.ParseJsonString(code), nil
+		}
+	}
+	return pgtype.Text{}, fmt.Errorf("could not generate event code")
+}
+
 func (r *Repository) CancelGift(ctx context.Context, giftContractAddress pgtype.Text) error {
 
 	result, err := r.query.CancelGift(ctx, giftContractAddress)
@@ -39,8 +54,14 @@ func (r *Repository) CancelGift(ctx context.Context, giftContractAddress pgtype.
 }
 
 func (r *Repository) CreateEvent(ctx context.Context, params db.CreateEventParams) error {
-	_, err := r.query.CreateEvent(ctx, params)
 	fmt.Println("inside repo CreateEvent:", params)
+
+	joinCode, err := r.GetEventJoinCode(ctx)
+	if err != nil {
+		return err
+	}
+	params.JoinCode = joinCode
+	_, err = r.query.CreateEvent(ctx, params)
 	if err != nil {
 		return fmt.Errorf("database error: %w", err)
 	}

@@ -26,12 +26,14 @@ export function useNewEvent() {
     const [submitMessage, setSubmitMessage] = useState<string | null>(null);
     const [submitError, setSubmitError] = useState<string | null>(null);
 
-    const userId = useAuth().user?.id!;
+    // for test
+    const userId = useAuth().user?.id! || 12345678;
 
     const handleCreate = async () => {
         setIsSubmitting(true);
         setSubmitMessage(null);
         setSubmitError(null);
+        console.log("userId", userId)
         try {
             const req: CreateEventRequest = {
                 name: formData.eventName,

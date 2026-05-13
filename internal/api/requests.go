@@ -2,6 +2,7 @@ package api
 
 import (
 	"PartyBaker/internal/db"
+	"PartyBaker/internal/utils"
 	"errors"
 	"fmt"
 	"time"
@@ -44,25 +45,25 @@ func ConvertEventToParams(event *CreateEventRequest) (db.CreateEventParams, erro
 		return db.CreateEventParams{}, errors.New("event name is required")
 	}
 
-	date, err := parseJsonDate(event.Date, time.Now())
+	date, err := utils.ParseJsonDate(event.Date, time.Now())
 	if err != nil {
 		return db.CreateEventParams{}, err
 	}
 
-	deadline, err := parseJsonDate(event.Deadline, time.Now())
+	deadline, err := utils.ParseJsonDate(event.Deadline, time.Now())
 	if err != nil {
 		return db.CreateEventParams{}, err
 	}
 
 	fmt.Println(db.CreateEventParams{
-		Name:     parseJsonString(event.Name),
+		Name:     utils.ParseJsonString(event.Name),
 		Date:     date,
 		Deadline: deadline,
-		// for test, in general we have to use user profile
-		AdminID: event.AdminId})
+		AdminID:  event.AdminId,
+	})
 
 	return db.CreateEventParams{
-		Name:     parseJsonString(event.Name),
+		Name:     utils.ParseJsonString(event.Name),
 		Date:     date,
 		Deadline: deadline,
 		// for test, in general we have to use user profile
@@ -75,18 +76,18 @@ func ConvertUpdateEventToParams(event *UpdateEventRequest, adminID int32, eventI
 		return db.UpdateEventParams{}, errors.New("event name is required")
 	}
 
-	date, err := parseJsonDate(event.Date, time.Now())
+	date, err := utils.ParseJsonDate(event.Date, time.Now())
 	if err != nil {
 		return db.UpdateEventParams{}, err
 	}
 
-	deadline, err := parseJsonDate(event.Deadline, time.Now())
+	deadline, err := utils.ParseJsonDate(event.Deadline, time.Now())
 	if err != nil {
 		return db.UpdateEventParams{}, err
 	}
 
 	return db.UpdateEventParams{
-		Name:     parseJsonString(event.Name),
+		Name:     utils.ParseJsonString(event.Name),
 		Date:     date,
 		Deadline: deadline,
 		ID:       eventID,
@@ -100,16 +101,16 @@ func ConvertGiftToParams(gift *CreateGiftRequest, eventId int32, adminId int32) 
 	}
 
 	return db.CreateGiftParams{
-		Name:            parseJsonString(gift.Name),
-		Link:            parseJsonString(gift.Link),
-		TargetAmount:    parseJsonInt(gift.TargetAmount),
-		ContractAddress: parseJsonString(gift.ContractAddress),
-		JettonAddress:   parseJsonString(gift.JettonAddress),
+		Name:            utils.ParseJsonString(gift.Name),
+		Link:            utils.ParseJsonString(gift.Link),
+		TargetAmount:    utils.ParseJsonInt(gift.TargetAmount),
+		ContractAddress: utils.ParseJsonString(gift.ContractAddress),
+		JettonAddress:   utils.ParseJsonString(gift.JettonAddress),
 		EventID:         eventId,
 		RecipientID:     gift.RecipientId,
 		AdminID:         adminId,
-		Description:     parseJsonString(gift.Description),
-		ImageUrl:        parseJsonString(gift.ImageUrl),
+		Description:     utils.ParseJsonString(gift.Description),
+		ImageUrl:        utils.ParseJsonString(gift.ImageUrl),
 	}, nil
 }
 
@@ -124,10 +125,10 @@ func ConvertUpdateGiftToParams(gift *UpdateGiftRequest, adminID int32, giftID in
 	}
 
 	return db.UpdateGiftParams{
-		Name:         parseJsonString(gift.Name),
-		TargetAmount: parseJsonInt(gift.TargetAmount),
-		Description:  parseJsonString(gift.Description),
-		Link:         parseJsonString(gift.Url),
+		Name:         utils.ParseJsonString(gift.Name),
+		TargetAmount: utils.ParseJsonInt(gift.TargetAmount),
+		Description:  utils.ParseJsonString(gift.Description),
+		Link:         utils.ParseJsonString(gift.Url),
 		AdminID:      adminID,
 		ID:           giftID,
 	}, nil

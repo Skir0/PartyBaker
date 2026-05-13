@@ -73,10 +73,25 @@ func (q *Queries) ChangeTargetAmount(ctx context.Context, arg ChangeTargetAmount
 	return err
 }
 
+const checkEventJoinCodeExists = `-- name: CheckEventJoinCodeExists :one
+select EXISTS (
+    select 1
+    from Events
+    where join_code = $1
+)
+`
+
+func (q *Queries) CheckEventJoinCodeExists(ctx context.Context, joinCode pgtype.Text) (bool, error) {
+	row := q.db.QueryRow(ctx, checkEventJoinCodeExists, joinCode)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
 const createEvent = `-- name: CreateEvent :one
-insert into Events (name, date, deadline, admin_id)
-values ($1, $2, $3, $4)
-returning id, name, date, deadline, admin_id
+insert into Events (name, date, deadline, admin_id, join_code)
+values ($1, $2, $3, $4, $5)
+returning id, name, date, deadline, admin_id, join_code
 `
 
 type CreateEventParams struct {
@@ -84,6 +99,7 @@ type CreateEventParams struct {
 	Date     pgtype.Timestamptz
 	Deadline pgtype.Timestamptz
 	AdminID  int32
+	JoinCode pgtype.Text
 }
 
 func (q *Queries) CreateEvent(ctx context.Context, arg CreateEventParams) (Event, error) {
@@ -92,6 +108,7 @@ func (q *Queries) CreateEvent(ctx context.Context, arg CreateEventParams) (Event
 		arg.Date,
 		arg.Deadline,
 		arg.AdminID,
+		arg.JoinCode,
 	)
 	var i Event
 	err := row.Scan(
@@ -100,6 +117,7 @@ func (q *Queries) CreateEvent(ctx context.Context, arg CreateEventParams) (Event
 		&i.Date,
 		&i.Deadline,
 		&i.AdminID,
+		&i.JoinCode,
 	)
 	return i, err
 }
@@ -398,6 +416,18 @@ func (q *Queries) GetAllParticipantsOfGift(ctx context.Context, giftID int32) ([
 		return nil, err
 	}
 	return items, nil
+}
+
+const getEventByJoinCode = `-- name: GetEventByJoinCode :one
+select 1 from events
+where join_code = $1
+`
+
+func (q *Queries) GetEventByJoinCode(ctx context.Context, joinCode pgtype.Text) (int32, error) {
+	row := q.db.QueryRow(ctx, getEventByJoinCode, joinCode)
+	var column_1 int32
+	err := row.Scan(&column_1)
+	return column_1, err
 }
 
 const getEventsInfoByUserID = `-- name: GetEventsInfoByUserID :many
@@ -737,7 +767,15 @@ type UpdateEventParams struct {
 	AdminID  int32
 }
 
-func (q *Queries) UpdateEvent(ctx context.Context, arg UpdateEventParams) (Event, error) {
+type UpdateEventRow struct {
+	ID       int32
+	Name     pgtype.Text
+	Date     pgtype.Timestamptz
+	Deadline pgtype.Timestamptz
+	AdminID  int32
+}
+
+func (q *Queries) UpdateEvent(ctx context.Context, arg UpdateEventParams) (UpdateEventRow, error) {
 	row := q.db.QueryRow(ctx, updateEvent,
 		arg.Name,
 		arg.Date,
@@ -745,7 +783,7 @@ func (q *Queries) UpdateEvent(ctx context.Context, arg UpdateEventParams) (Event
 		arg.ID,
 		arg.AdminID,
 	)
-	var i Event
+	var i UpdateEventRow
 	err := row.Scan(
 		&i.ID,
 		&i.Name,

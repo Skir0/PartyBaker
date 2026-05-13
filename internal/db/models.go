@@ -14,6 +14,7 @@ type Event struct {
 	Date     pgtype.Timestamptz
 	Deadline pgtype.Timestamptz
 	AdminID  int32
+	JoinCode pgtype.Text
 }
 
 type Gift struct {

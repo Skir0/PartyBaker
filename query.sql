@@ -4,8 +4,8 @@ values ($1, $2, $3, $4, $5)
 returning *;
 
 -- name: CreateEvent :one
-insert into Events (name, date, deadline, admin_id)
-values ($1, $2, $3, $4)
+insert into Events (name, date, deadline, admin_id, join_code)
+values ($1, $2, $3, $4, $5)
 returning *;
 
 -- name: CreateParticipant :one
@@ -181,3 +181,14 @@ ON CONFLICT DO NOTHING;
 -- name: RemoveGiftLike :exec
 delete from giftlikes
 WHERE user_id = $1 AND gift_id = $2;
+
+-- name: CheckEventJoinCodeExists :one
+select EXISTS (
+    select 1
+    from Events
+    where join_code = $1
+);
+
+-- name: GetEventByJoinCode :one
+select 1 from events
+where join_code = $1;

@@ -1,5 +1,5 @@
 import { MaterialIcon } from './MaterialIcon.tsx';
-import type { RecipientGiftFolder } from '../../types/event.types.ts';
+import type { RecipientGiftFolder } from '../../types/gift.types.ts';
 
 interface RecipientFoldersProps {
     folders: RecipientGiftFolder[];

@@ -1,7 +1,8 @@
 import { ItemField } from './ItemField.tsx';
 import { DateFields } from './DateFields.tsx';
 import { ProTipCard } from '../cards/ProTipCard.tsx';
-import { type EventFormProps, SheetType } from '../../types/event.types.ts';
+import type { EventFormProps } from '../../types/event-ui.types.ts';
+import { SheetType } from '../../types/sheet.types.ts';
 
 export function EventForm({formData, onChange}: EventFormProps) {
 

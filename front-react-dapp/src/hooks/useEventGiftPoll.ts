@@ -3,18 +3,20 @@ import { useEffect, useMemo, useState } from 'react';
 
 import {
     addGiftLike, deleteGiftLike,
-    getEventsOfCurrentUser,
-    getGiftsInfoByRecipient,
-    getRecipientsOfEvent
+    getGiftsInfoByRecipient
 } from '../api/giftService.ts';
 
 import type {
     EventResponse,
+    RecipientResponse
+} from '../types/event-domain.types.ts';
+import type {
     GiftInfoResponse,
     GiftSuggestion,
     RecipientGiftFolder,
-    RecipientResponse
-} from '../types/event.types.ts';
+} from '../types/gift.types.ts';
+import { getEventsOfCurrentUser } from '../api/eventService.ts';
+import { getRecipientsOfEvent } from '../api/participantsService.ts';
 
 
 function formatGiftPrice(value: number): string {
@@ -68,8 +70,8 @@ function buildRecipientFolders(
 export function useEventGiftPoll(eventId: string | undefined, routeState: any) {
     const storageKey = eventId ? `eventGiftPoll.activeFolder.${eventId}` : null;
 
-    const [event, setEvent] = useState<EventResponse | null>(routeState?.event ?? null);
-    const [isLoading, setIsLoading] = useState<boolean>(!routeState?.event);
+    const [event, setEvent] = useState<EventResponse | null>();
+    const [isLoading, setIsLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
     const [activeFolderId, setActiveFolderId] = useState<string>(() => {
         if (!eventId) return '';
@@ -78,6 +80,45 @@ export function useEventGiftPoll(eventId: string | undefined, routeState: any) {
     const [recipients, setRecipients] = useState<RecipientResponse[]>(routeState?.recipientsOfEvent ?? []);
     const [giftsByRecipient, setGiftsByRecipient] = useState<Record<number, GiftInfoResponse[]>>({});
     const [isLoadingRecipientGifts, setIsLoadingRecipientGifts] = useState<boolean>(false);
+
+
+
+    const recipientFolders = useMemo(() => {
+        return buildRecipientFolders(recipients, giftsByRecipient);
+    }, [giftsByRecipient, recipients]);
+
+    const activeFolder = useMemo(
+        () => recipientFolders.find((folder) => folder.id === activeFolderId) ?? recipientFolders[0] ?? null,
+        [activeFolderId, recipientFolders]
+    );
+
+    const activeRecipient = useMemo(
+        () => recipients.find((recipient) => `recipient-${recipient.id}` === activeFolderId) ?? recipients[0] ?? null,
+        [activeFolderId, recipients]
+    );
+
+    function getMostLikedGift(gifts: GiftInfoResponse[]): GiftInfoResponse | null {
+        if (gifts.length === 0) return null;
+
+        return gifts.reduce<GiftInfoResponse>((best, current) => {
+            const bestLikes = best.likes_amount ?? 0;
+            const currentLikes = current.likes_amount ?? 0;
+
+            if (currentLikes > bestLikes) return current;
+            if (currentLikes < bestLikes) return best;
+
+            return current.id < best.id ? current : best;
+        });
+    }
+
+    const activeMostLikedGift = useMemo(() => {
+        if (!activeRecipient) {
+            return null;
+        }
+        console.log(giftsByRecipient[activeRecipient.id])
+        return getMostLikedGift(giftsByRecipient[activeRecipient.id] ?? [])
+    }, [giftsByRecipient, activeRecipient])
+
 
 
 
@@ -90,6 +131,7 @@ export function useEventGiftPoll(eventId: string | undefined, routeState: any) {
         setGiftsByRecipient((current) => {
             const recipientGifts = current[recipientId] || [];
 
+
             const updatedGifts = recipientGifts.map((gift) => {
                 if (gift.id === giftId) {
                     return {
@@ -100,6 +142,7 @@ export function useEventGiftPoll(eventId: string | undefined, routeState: any) {
                 }
                 return gift;
             });
+
 
             return {
                 ...current,
@@ -128,6 +171,29 @@ export function useEventGiftPoll(eventId: string | undefined, routeState: any) {
         }
     };
 
+    const isDeadline = useMemo<boolean>(() => {
+        if (!event?.deadline) {
+            return false;
+        }
+        const deadline = new Date(event.deadline);
+        const today = new Date();
+
+        console.log(deadline, today)
+
+        deadline.setHours(0, 0, 0, 0);
+        today.setHours(0, 0, 0, 0);
+
+        if (deadline < today) {
+
+
+            // TODO backend logic
+
+            return true;
+
+        }
+        return false;
+    }, [event?.deadline])
+
     useEffect(() => {
         if (!storageKey) return;
         if (!activeFolderId) {
@@ -148,6 +214,7 @@ export function useEventGiftPoll(eventId: string | undefined, routeState: any) {
             setError(null);
 
             try {
+                // TODO change
                 const events = await getEventsOfCurrentUser();
                 const matchedEvent = (events as EventResponse[]).find((item: EventResponse) => item.id === Number(eventId)) ?? null;
 
@@ -185,9 +252,7 @@ export function useEventGiftPoll(eventId: string | undefined, routeState: any) {
     }, [eventId, recipients.length]);
 
 
-    const recipientFolders = useMemo(() => {
-        return buildRecipientFolders(recipients, giftsByRecipient);
-    }, [giftsByRecipient, recipients]);
+
 
     useEffect(() => {
         if (recipientFolders.length === 0) {
@@ -205,16 +270,7 @@ export function useEventGiftPoll(eventId: string | undefined, routeState: any) {
         });
     }, [recipientFolders, storageKey]);
 
-    const activeFolder = useMemo(
-        () => recipientFolders.find((folder) => folder.id === activeFolderId) ?? recipientFolders[0] ?? null,
-        [activeFolderId, recipientFolders]
-    );
 
-
-    const activeRecipient = useMemo(
-        () => recipients.find((recipient) => `recipient-${recipient.id}` === activeFolderId) ?? recipients[0] ?? null,
-        [activeFolderId, recipients]
-    );
 
     useEffect(() => {
         if (!event || recipients.length === 0) return;
@@ -260,6 +316,7 @@ export function useEventGiftPoll(eventId: string | undefined, routeState: any) {
 
     return {
         event,
+        isDeadline,
         isLoading,
         error,
         recipientFolders,
@@ -270,6 +327,7 @@ export function useEventGiftPoll(eventId: string | undefined, routeState: any) {
         handleToggleLike,
         giftsByRecipient,
         setGiftsByRecipient,
-        activeRecipient
+        activeRecipient,
+        activeMostLikedGift
     };
 }

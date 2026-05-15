@@ -39,6 +39,11 @@ type CreateGiftRequest struct {
 	ImageUrl        string `json:"image_url"`
 }
 
+type JoinEventByCodeRequest struct {
+	JoinCode string `json:"join_code"`
+	Role     string `json:"role"`
+}
+
 func ConvertEventToParams(event *CreateEventRequest) (db.CreateEventParams, error) {
 	fmt.Println("inside ConvertEventToParams")
 	if event.Name == "" {

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router';
-import type { SuggestGiftFormData } from '../types/event.types.ts';
+import type { SuggestGiftFormData } from '../types/form.types.ts';
 import { createGift } from '../api/giftService.ts';
 import type { CreateGiftRequest } from '../api/requests.ts';
 

@@ -28,3 +28,8 @@ export interface CreateGiftRequest {
     description: string;
     image_url: string;
 }
+
+export interface JoinEventRequest {
+    join_code: string;
+    role: string;
+}

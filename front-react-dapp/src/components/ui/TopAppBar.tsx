@@ -1,5 +1,5 @@
 import { MaterialIcon } from './MaterialIcon.tsx';
-import type { TopAppBarProps } from '../../types/event.types.ts';
+import type { TopAppBarProps } from '../../types/ui-common.types.ts';
 import { TonConnectButton } from '@tonconnect/ui-react';
 
 export function TopAppBar({ title, onBack, endSlot }: TopAppBarProps) {

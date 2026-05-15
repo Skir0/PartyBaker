@@ -1,10 +1,10 @@
 
 import { useNavigate } from 'react-router';
 import { useState } from 'react';
-import type { EventFormData } from '../types/event.types.ts';
+import type { EventFormData } from '../types/form.types.ts';
 import type { CreateEventRequest } from '../api/requests.ts';
-import { createEvent } from '../api/giftService.ts';
 import { useAuth } from '../contexts/AuthContext.tsx';
+import { createEvent } from '../api/eventService.ts';
 
 export function useNewEvent() {
 

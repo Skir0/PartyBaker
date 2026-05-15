@@ -1,4 +1,4 @@
-import type { MaterialIconProps } from '../../types/event.types.ts';
+import type { MaterialIconProps } from '../../types/ui-common.types.ts';
 
 export function MaterialIcon({
                                  icon,

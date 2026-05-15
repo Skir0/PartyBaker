@@ -4,6 +4,10 @@ import (
 	"PartyBaker/internal/db"
 )
 
+type JoinEventResponse struct {
+	EventID int32  `json:"event_id"`
+	Error   string `json:"error"`
+}
 type EventResponse struct {
 	ID                 int32  `json:"id"`
 	Name               string `json:"name"`
@@ -41,6 +45,20 @@ type GiftInfoResponse struct {
 	LikedByCurrentUser bool   `json:"liked_by_user"`
 }
 
+type GiftResponse struct {
+	Id              int32  `json:"id"`
+	Name            string `json:"name"`
+	Link            string `json:"link"`
+	Status          string `json:"status"`
+	ContractAddress string `json:"contract_address"`
+	AdminId         int32  `json:"admin_id"`
+	TargetAmount    int32  `json:"target_amount"`
+	CollectedAmount int32  `json:"collected_amount"`
+	RecipientId     int32  `json:"recipient_id"`
+	Description     string `json:"description"`
+	ImageUrl        string `json:"image_url"`
+}
+
 func ConvertGiftsInfoToResponses(gifts []db.GetGiftsInfoByRecipientRow) []GiftInfoResponse {
 
 	giftResponses := make([]GiftInfoResponse, len(gifts))
@@ -67,10 +85,41 @@ func ConvertGiftsInfoToResponses(gifts []db.GetGiftsInfoByRecipientRow) []GiftIn
 
 }
 
+func ConvertGiftsToResponses(gifts []db.Gift) []GiftResponse {
+
+	giftResponses := make([]GiftResponse, len(gifts))
+
+	for i, gift := range gifts {
+
+		giftResponses[i] = GiftResponse{
+			Id:              gift.ID,
+			Name:            gift.Name.String,
+			Link:            gift.Link.String,
+			TargetAmount:    int32(gift.TargetAmount.Int64),
+			CollectedAmount: int32(gift.CollectedAmount.Int64),
+			ContractAddress: gift.ContractAddress.String,
+			Status:          gift.Status,
+			RecipientId:     gift.RecipientID,
+			AdminId:         gift.AdminID,
+			Description:     gift.Description.String,
+			ImageUrl:        gift.ImageUrl.String,
+		}
+	}
+	return giftResponses
+
+}
+
 func ConvertEventsToResponses(events []db.GetEventsInfoByUserIDRow, currentUserID int64) []EventResponse {
 	eventResponses := make([]EventResponse, len(events))
 	for i, event := range events {
-		eventResponses[i] = ConvertEventToResponse(event, currentUserID)
+		eventResponses[i] = EventResponse{
+			ID:                 event.ID,
+			Name:               event.Name.String,
+			Date:               event.Date.Time.Format("2006-01-02"),
+			Deadline:           event.Deadline.Time.Format("2006-01-02"),
+			ParticipantsAmount: event.ParticipantsCount,
+			IsAdmin:            int64(event.AdminID) == currentUserID,
+		}
 	}
 	return eventResponses
 }
@@ -87,7 +136,7 @@ func ConvertRecipientsToResponses(recipients []db.GetGiftRecipientsOfCurrentEven
 	return recipientResponses
 }
 
-func ConvertEventToResponse(event db.GetEventsInfoByUserIDRow, currentUserID int64) EventResponse {
+func ConvertEventToResponse(event db.GetEventInfoByIdRow, currentUserID int64) EventResponse {
 	return EventResponse{
 		ID:                 event.ID,
 		Name:               event.Name.String,

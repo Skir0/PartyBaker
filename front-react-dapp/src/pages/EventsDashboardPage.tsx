@@ -6,9 +6,9 @@ import { BottomNavBar } from '../components/ui/BottomNavBar.tsx';
 import { MaterialIcon } from '../components/ui/MaterialIcon.tsx';
 import { useEventsDashboard } from '../hooks/useEventsDashboard.ts';
 import { useAdminControls } from '../hooks/useAdminControls.ts';
-import { SheetType } from '../types/event.types.ts';
-import { deleteEvent, updateEvent } from '../api/giftService.ts';
+import { SheetType } from '../types/sheet.types.ts';
 import { AdminSheet } from '../components/ui/AdminSheet.tsx';
+import { deleteEvent, updateEvent } from '../api/eventService.ts';
 
 export function EventsDashboardPage() {
 

@@ -1,5 +1,5 @@
 import { MaterialIcon } from '../ui/MaterialIcon.tsx';
-import type { EventOverviewCardProps } from '../../types/event.types.ts';
+import type { EventOverviewCardProps } from '../../types/event-ui.types.ts';
 
 export function EventOverviewCard({
                                       title,

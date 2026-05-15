@@ -1,11 +1,10 @@
 import { useState, type ChangeEvent, type Dispatch, type SetStateAction } from 'react';
 import {
-    SheetType,
-    type EventFormData,
     type EventResponse,
-    type GiftFormData,
-    type GiftInfoResponse
-} from '../types/event.types.ts';
+} from '../types/event-domain.types.ts';
+import type { EventFormData, GiftFormData } from '../types/form.types.ts';
+import type { GiftInfoResponse } from '../types/gift.types.ts';
+import { SheetType } from '../types/sheet.types.ts';
 import type { UpdateEventRequest, UpdateGiftRequest } from '../api/requests.ts';
 
 export type UseEventAdminControlsParams = {

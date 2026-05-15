@@ -1,5 +1,5 @@
 import { MaterialIcon } from '../ui/MaterialIcon.tsx';
-import type { GiftSuggestion } from '../../types/event.types.ts';
+import type { GiftSuggestion } from '../../types/gift.types.ts';
 
 interface GiftSuggestionCardProps {
     suggestion: GiftSuggestion;
@@ -11,8 +11,8 @@ interface GiftSuggestionCardProps {
 export function GiftSuggestionCard({ suggestion, handleToggleLike, onSettingsClick, isAdmin }: GiftSuggestionCardProps) {
 
     return (
-        <article className="flex items-start gap-4 rounded-xl border border-outline-variant/5 bg-surface-container-lowest p-3 shadow-sm">
-            <div className="h-24 w-24 shrink-0 overflow-hidden rounded-lg bg-surface-container">
+        <article className="flex gap-3 rounded-xl border border-outline-variant/10 bg-surface p-3 shadow-sm">
+            <div className="h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-surface-container">
                 <img
                     src={suggestion.imageUrl}
                     alt={suggestion.imageAlt}
@@ -21,52 +21,46 @@ export function GiftSuggestionCard({ suggestion, handleToggleLike, onSettingsCli
             </div>
 
             <div className="min-w-0 flex-1">
-                <div className="mb-1 flex items-start justify-between gap-3">
-                    <h3 className="truncate text-base font-semibold text-on-surface">{suggestion.title}</h3>
-                    <span className="shrink-0 font-bold text-primary">{suggestion.price}</span>
-                </div>
+                <div className="flex items-start justify-between gap-2">
+                    <h3 className="line-clamp-1 text-sm font-semibold text-on-surface">
+                        {suggestion.title}
+                    </h3>
 
-                <p className="mb-3 line-clamp-2 text-xs leading-relaxed text-on-surface-variant">
-                    {suggestion.description}
-                </p>
-
-                <div className="flex items-center justify-between gap-3">
-                    <div className="flex -space-x-2 overflow-hidden">
-                        {suggestion.supporterBadges.map((badge) => (
-                            <div
-                                key={`${suggestion.id}-${badge.label}`}
-                                className={`inline-flex h-6 w-6 items-center justify-center rounded-full ring-2 ring-white text-[10px] font-bold ${badge.className} ${badge.textClassName ?? ''}`}
-                            >
-                                {badge.label}
-                            </div>
-                        ))}
-                    </div>
-
-                    <button
-                        type="button"
-                        className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-transform active:scale-95 ${
-                            suggestion.liked
-                                ? 'bg-primary text-on-primary'
-                                : 'bg-surface-container-low text-on-surface-variant'
-                        }`}
-                        onClick={() => handleToggleLike(suggestion.id, suggestion.liked)}
-                    >
-                        <MaterialIcon icon="favorite" fill={suggestion.liked} size="text-[18px]" />
-                        <span>{suggestion.likes}</span>
-                    </button>
                     {isAdmin && (
                         <button
+                            type="button"
                             onClick={(e) => {
-
-                                e.stopPropagation(); // don't trigger card click
-                                // maybe this
-                                onSettingsClick?.(suggestion.id);
+                                e.stopPropagation();
+                                onSettingsClick(suggestion.id);
                             }}
-                            className="flex items-center justify-center w-7 h-7 rounded-full text-on-surface-variant hover:bg-surface-container active:bg-surface-container-high transition-colors"
+                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-on-surface-variant transition-colors hover:bg-surface-container"
                         >
                             <MaterialIcon icon="settings" size="text-[18px]" />
                         </button>
                     )}
+                </div>
+
+                <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-on-surface-variant">
+                    {suggestion.description}
+                </p>
+
+                <div className="mt-3 flex items-center justify-between gap-3">
+      <span className="text-sm font-bold text-primary">
+        {suggestion.price}
+      </span>
+
+                    <button
+                        type="button"
+                        onClick={() => handleToggleLike(suggestion.id, suggestion.liked)}
+                        className={`flex h-8 items-center gap-1 rounded-full px-3 text-xs font-medium transition-colors ${
+                            suggestion.liked
+                                ? 'bg-primary-container text-on-primary-container'
+                                : 'bg-surface-container text-on-surface-variant'
+                        }`}
+                    >
+                        <MaterialIcon icon="favorite" fill={suggestion.liked} size="text-[16px]" />
+                        <span>{suggestion.likes}</span>
+                    </button>
                 </div>
             </div>
         </article>

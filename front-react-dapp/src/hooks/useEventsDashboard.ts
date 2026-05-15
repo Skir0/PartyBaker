@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
-import type { EventFormData, EventResponse } from '../types/event.types.ts';
-import { getEventsOfCurrentUser, getRecipientsOfEvent } from '../api/giftService.ts';
+import type { EventFormData } from '../types/form.types.ts';
+import type { EventResponse } from '../types/event-domain.types.ts';
 import { useNavigate } from 'react-router';
+import { getEventsOfCurrentUser } from '../api/eventService.ts';
+import { getRecipientsOfEvent } from '../api/participantsService.ts';
 
 
 export function useEventsDashboard() {
@@ -9,13 +11,13 @@ export function useEventsDashboard() {
     const navigate = useNavigate();
     const [error, setError] = useState<string | null>(null);
     const [events, setEvents] = useState<EventResponse[]>([]);
-    const [selectedEvent, setSelectedEvent] = useState<EventResponse | null>(null);
-    const [adminFormData, setAdminFormData] = useState<EventFormData>({
+    const [selectedEvent] = useState<EventResponse | null>(null);
+    const [adminFormData] = useState<EventFormData>({
         eventName: '',
         eventDate: '',
         contributionDeadline: ''
     });
-    const [isCancelConfirming, setIsCancelConfirming] = useState(false);
+    const [isCancelConfirming] = useState(false);
 
 
 
@@ -45,7 +47,7 @@ export function useEventsDashboard() {
         const recipientsOfEvent = await getRecipientsOfEvent(event.id)
 
         navigate(`/events/${event.id}/gifts`, {
-            state: { event, recipientsOfEvent }
+            state: { recipientsOfEvent }
         });
     };
 

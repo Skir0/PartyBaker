@@ -40,10 +40,14 @@ func NewRouter(h *Handler) *chi.Mux {
 
 		// Работа с событиями
 		r.Route("/events", func(r chi.Router) {
+			r.Post("/join", h.JoinEventByCode)
 			r.Post("/create", h.CreateEvent)
 			r.Get("/getEvents", h.GetEventsByUserID)
 
 			r.Route("/{eventId}", func(r chi.Router) {
+
+				// finalize event and it's gifts
+				r.Post("/finalize", h.FinalizeEventGifts)
 
 				// creating gift
 				r.Post("/suggestGift", h.CreateGift)

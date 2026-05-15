@@ -1,5 +1,5 @@
 import { MaterialIcon } from '../ui/MaterialIcon.tsx';
-import type { StepHeaderCardProps } from '../../types/event.types.ts';
+import type { StepHeaderCardProps } from '../../types/ui-common.types.ts';
 
 export function StepHeaderCard({ step, title, description }: StepHeaderCardProps) {
     return (

@@ -1,5 +1,5 @@
 import { MaterialIcon } from '../ui/MaterialIcon.tsx';
-import type { SummaryStatCardProps } from '../../types/event.types.ts';
+import type { SummaryStatCardProps } from '../../types/ui-common.types.ts';
 
 export function SummaryStatCard({ icon, iconClassName, label, value }: SummaryStatCardProps) {
     return (

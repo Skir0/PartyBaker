@@ -1,5 +1,5 @@
 import { MaterialIcon } from '../ui/MaterialIcon.tsx';
-import type { DateFieldsProps } from '../../types/event.types.ts';
+import type { DateFieldsProps } from '../../types/event-ui.types.ts';
 
 export function DateFields({
                                eventDate,

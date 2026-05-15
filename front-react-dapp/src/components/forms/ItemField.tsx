@@ -1,5 +1,5 @@
 import { MaterialIcon } from '../ui/MaterialIcon.tsx';
-import { SheetType } from '../../types/event.types.ts';
+import { SheetType } from '../../types/sheet.types.ts';
 
 export interface ItemNameFieldProps {
     value: string;

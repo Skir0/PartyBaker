@@ -1,7 +1,7 @@
 import { MaterialIcon } from './MaterialIcon.tsx';
 import {
     type AdminSheetProps,
-} from '../../types/event.types.ts';
+} from '../../types/sheet.types.ts';
 import { ChangeGiftForm } from '../forms/ChangeGiftForm.tsx';
 import { EventForm } from '../forms/EventForm.tsx';
 

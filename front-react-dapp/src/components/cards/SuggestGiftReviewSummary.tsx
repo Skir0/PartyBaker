@@ -1,4 +1,4 @@
-import type { SuggestGiftFormData } from '../../types/event.types.ts';
+import type { SuggestGiftFormData } from '../../types/form.types.ts';
 
 interface SuggestGiftReviewSummaryProps {
     formData: SuggestGiftFormData;

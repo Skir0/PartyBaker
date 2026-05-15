@@ -189,6 +189,42 @@ select EXISTS (
     where join_code = $1
 );
 
--- name: GetEventByJoinCode :one
-select 1 from events
-where join_code = $1;
+-- name: GetEventIdByJoinCode :one
+select id from events
+where join_code = $1
+limit 1;
+
+-- name: CheckParticipantExists :one
+select exists(
+    select 1 from participants
+             where user_id = $1 and event_id = $2
+);
+
+-- name: GetEventInfoById :one
+select events.* , count(distinct p.id)::int as participants_count from events
+                                                           left join participants on events.id = participants.event_id
+where events.id = $1
+group by events.id, name, date, deadline, admin_id, join_code
+limit 1;
+
+-- name: FinalizeGiftStatusesOfEvent :exec
+with ranked as (
+    select
+        g.id,
+        row_number() over (
+            partition by g.recipient_id
+            order by count(gl.gift_id) desc, g.id asc
+            ) as rn
+    from gifts g
+             left join giftlikes gl on gl.gift_id = g.id
+    where g.event_id = $1 and g.status in ('active', 'selected')
+    group by g.id, g.recipient_id
+)
+update gifts g
+set status = case when r.rn = 1 then 'selected' else 'rejected' end
+from ranked r
+where g.id = r.id and g.status in ('active', 'selected');
+
+-- name: GetSelectedGiftsOfEvent :many
+select * from gifts
+where event_id = $1 and status = 'selected';

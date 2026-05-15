@@ -1,5 +1,6 @@
 import { ItemField } from './ItemField.tsx';
-import { type ChangeGiftFormProps, SheetType } from '../../types/event.types.ts';
+import type { ChangeGiftFormProps } from '../../types/gift-ui.types.ts';
+import { SheetType } from '../../types/sheet.types.ts';
 
 
 export function ChangeGiftForm({formData, onChange}: ChangeGiftFormProps) {

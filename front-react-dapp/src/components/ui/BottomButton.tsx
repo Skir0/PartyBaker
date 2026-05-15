@@ -1,5 +1,5 @@
 import { MaterialIcon } from './MaterialIcon.tsx';
-import type { BottomButtonProps } from '../../types/event.types.ts';
+import type { BottomButtonProps } from '../../types/ui-common.types.ts';
 
 export function BottomButton({ text, icon, onClick, disabled = false }: BottomButtonProps) {
     return (

@@ -7,26 +7,28 @@ import { EventGiftPollNav } from '../components/ui/EventGiftPollNav.tsx';
 import { RecipientFolders } from '../components/ui/RecipientFolders.tsx';
 
 import {
-    SheetType,
-    type EventResponse,
-    type RecipientResponse, type GiftFormData,
-} from '../types/event.types.ts';
+    type RecipientResponse,
+} from '../types/event-domain.types.ts';
+import type { GiftFormData } from '../types/form.types.ts';
+import { SheetType } from '../types/sheet.types.ts';
 import { useEventGiftPoll } from '../hooks/useEventGiftPoll.ts';
 import { useAdminControls } from '../hooks/useAdminControls.ts';
 import { deleteGift, updateGift } from '../api/giftService.ts';
 import { AdminSheet } from '../components/ui/AdminSheet.tsx';
 import { useAuth } from '../contexts/AuthContext.tsx';
+import { GiftPaymentStatus } from '../components/ui/GiftPaymentStatus.tsx';
 
 
 export function EventGiftPollPage() {
     const navigate = useNavigate();
     const location = useLocation();
     const params = useParams<{ eventId: string }>();
-    const routeState = location.state as { event?: EventResponse; recipientsOfEvent?: RecipientResponse[] } | null;
+    const routeState = location.state as { recipientsOfEvent?: RecipientResponse[] } | null;
 
 
     const {
         event,
+        isDeadline,
         isLoading,
         error,
         recipientFolders,
@@ -36,7 +38,8 @@ export function EventGiftPollPage() {
         handleToggleLike,
         giftsByRecipient,
         setGiftsByRecipient,
-        activeRecipient
+        activeRecipient,
+        activeMostLikedGift
     } = useEventGiftPoll(params.eventId, routeState);
 
     const {
@@ -98,7 +101,7 @@ export function EventGiftPollPage() {
                     <p className="py-10 text-center text-sm text-error">{error}</p>
                 )}
 
-                {!isLoading && !error && event && (
+                {!isLoading && !error && event && !isDeadline && (
                     <>
                         {isLoadingRecipientGifts && (
                             <p className="py-10 text-center text-sm text-on-surface-variant">
@@ -147,6 +150,21 @@ export function EventGiftPollPage() {
                         </p>
                     </>
                 )}
+                {!isDeadline && (
+                    <GiftPaymentStatus giftTitle={activeMostLikedGift?.name!}
+                                       eventTitle={event?.name!}
+                                       collectedAmount={activeMostLikedGift?.collected!}
+                                       targetAmount={activeMostLikedGift?.target_amount!}
+                                       participantsCount={event?.participants_amount!}
+                                       payAmount={activeMostLikedGift?.target_amount! / event?.participants_amount!}
+                                       participants={[]}
+                                       onBack={function(): void {
+                        throw new Error('Function not implemented.');
+                    } } onPay={function(): void {
+                        throw new Error('Function not implemented.');
+                    } }/>
+                )}
+
 
                 <AdminSheet
                     isOpen={selectedItem != null}

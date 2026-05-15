@@ -88,6 +88,25 @@ func (q *Queries) CheckEventJoinCodeExists(ctx context.Context, joinCode pgtype.
 	return exists, err
 }
 
+const checkParticipantExists = `-- name: CheckParticipantExists :one
+select exists(
+    select 1 from participants
+             where user_id = $1 and event_id = $2
+)
+`
+
+type CheckParticipantExistsParams struct {
+	UserID  int32
+	EventID int32
+}
+
+func (q *Queries) CheckParticipantExists(ctx context.Context, arg CheckParticipantExistsParams) (bool, error) {
+	row := q.db.QueryRow(ctx, checkParticipantExists, arg.UserID, arg.EventID)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
 const createEvent = `-- name: CreateEvent :one
 insert into Events (name, date, deadline, admin_id, join_code)
 values ($1, $2, $3, $4, $5)
@@ -343,6 +362,30 @@ func (q *Queries) DeleteParticipantGift(ctx context.Context, arg DeleteParticipa
 	return err
 }
 
+const finalizeGiftStatusesOfEvent = `-- name: FinalizeGiftStatusesOfEvent :exec
+with ranked as (
+    select
+        g.id,
+        row_number() over (
+            partition by g.recipient_id
+            order by count(gl.gift_id) desc, g.id asc
+            ) as rn
+    from gifts g
+             left join giftlikes gl on gl.gift_id = g.id
+    where g.event_id = $1 and g.status in ('active', 'selected')
+    group by g.id, g.recipient_id
+)
+update gifts g
+set status = case when r.rn = 1 then 'selected' else 'rejected' end
+from ranked r
+where g.id = r.id and g.status in ('active', 'selected')
+`
+
+func (q *Queries) FinalizeGiftStatusesOfEvent(ctx context.Context, eventID int32) error {
+	_, err := q.db.Exec(ctx, finalizeGiftStatusesOfEvent, eventID)
+	return err
+}
+
 const getAllActiveGiftsAddresses = `-- name: GetAllActiveGiftsAddresses :many
 select contract_address
 from Gifts
@@ -418,16 +461,50 @@ func (q *Queries) GetAllParticipantsOfGift(ctx context.Context, giftID int32) ([
 	return items, nil
 }
 
-const getEventByJoinCode = `-- name: GetEventByJoinCode :one
-select 1 from events
+const getEventIdByJoinCode = `-- name: GetEventIdByJoinCode :one
+select id from events
 where join_code = $1
+limit 1
 `
 
-func (q *Queries) GetEventByJoinCode(ctx context.Context, joinCode pgtype.Text) (int32, error) {
-	row := q.db.QueryRow(ctx, getEventByJoinCode, joinCode)
-	var column_1 int32
-	err := row.Scan(&column_1)
-	return column_1, err
+func (q *Queries) GetEventIdByJoinCode(ctx context.Context, joinCode pgtype.Text) (int32, error) {
+	row := q.db.QueryRow(ctx, getEventIdByJoinCode, joinCode)
+	var id int32
+	err := row.Scan(&id)
+	return id, err
+}
+
+const getEventInfoById = `-- name: GetEventInfoById :one
+select events.id, events.name, events.date, events.deadline, events.admin_id, events.join_code , count(distinct p.id)::int as participants_count from events
+                                                           left join participants on events.id = participants.event_id
+where events.id = $1
+group by events.id, name, date, deadline, admin_id, join_code
+limit 1
+`
+
+type GetEventInfoByIdRow struct {
+	ID                int32
+	Name              pgtype.Text
+	Date              pgtype.Timestamptz
+	Deadline          pgtype.Timestamptz
+	AdminID           int32
+	JoinCode          pgtype.Text
+	ParticipantsCount int32
+}
+
+func (q *Queries) GetEventInfoById(ctx context.Context, id int32) (GetEventInfoByIdRow, error) {
+	row := q.db.QueryRow(ctx, getEventInfoById, id)
+	var i GetEventInfoByIdRow
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Date,
+		&i.Deadline,
+		&i.AdminID,
+		&i.JoinCode,
+		&i.ParticipantsCount,
+	)
+	return i, err
 }
 
 const getEventsInfoByUserID = `-- name: GetEventsInfoByUserID :many
@@ -642,6 +719,45 @@ func (q *Queries) GetGiftsInfoByRecipient(ctx context.Context, arg GetGiftsInfoB
 			&i.ImageUrl,
 			&i.LikesAmount,
 			&i.Exists,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getSelectedGiftsOfEvent = `-- name: GetSelectedGiftsOfEvent :many
+select id, name, link, target_amount, status, contract_address, jetton_address, event_id, recipient_id, admin_id, collected_amount, description, image_url from gifts
+where event_id = $1 and status = 'selected'
+`
+
+func (q *Queries) GetSelectedGiftsOfEvent(ctx context.Context, eventID int32) ([]Gift, error) {
+	rows, err := q.db.Query(ctx, getSelectedGiftsOfEvent, eventID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Gift
+	for rows.Next() {
+		var i Gift
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Link,
+			&i.TargetAmount,
+			&i.Status,
+			&i.ContractAddress,
+			&i.JettonAddress,
+			&i.EventID,
+			&i.RecipientID,
+			&i.AdminID,
+			&i.CollectedAmount,
+			&i.Description,
+			&i.ImageUrl,
 		); err != nil {
 			return nil, err
 		}

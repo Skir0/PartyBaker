@@ -3,7 +3,7 @@ import { GiftStoreWebsiteField } from './GiftStoreWebsiteField.tsx';
 import { GiftPriceTonField } from './GiftPriceTonField.tsx';
 import { GiftSuggestDescriptionField } from './GiftSuggestDescriptionField.tsx';
 import { SuggestGiftInfoNote } from './SuggestGiftInfoNote.tsx';
-import type { SuggestGiftFormProps } from '../../types/event.types.ts';
+import type { SuggestGiftFormProps } from '../../types/gift-ui.types.ts';
 
 export function SuggestGiftForm({ formData, onChange }: SuggestGiftFormProps) {
     return (

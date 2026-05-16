@@ -107,6 +107,28 @@ func (q *Queries) CheckParticipantExists(ctx context.Context, arg CheckParticipa
 	return exists, err
 }
 
+const checkRecipientParticipantForEvent = `-- name: CheckRecipientParticipantForEvent :one
+select exists(
+    select 1
+    from participants
+    where id = $1
+      and event_id = $2
+      and role in ('recipient', 'participant')
+)
+`
+
+type CheckRecipientParticipantForEventParams struct {
+	ID      int32
+	EventID int32
+}
+
+func (q *Queries) CheckRecipientParticipantForEvent(ctx context.Context, arg CheckRecipientParticipantForEventParams) (bool, error) {
+	row := q.db.QueryRow(ctx, checkRecipientParticipantForEvent, arg.ID, arg.EventID)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
 const createEvent = `-- name: CreateEvent :one
 insert into Events (name, date, deadline, admin_id, join_code)
 values ($1, $2, $3, $4, $5)
@@ -596,7 +618,7 @@ select p.id, u.first_name, u.last_name
 from participants p
          join users u on u.id = p.user_id
 where p.event_id = $1
-  and p.role = 'recipient'
+  and p.role in ('recipient', 'participant')
 `
 
 type GetGiftRecipientsOfCurrentEventRow struct {
@@ -666,13 +688,15 @@ func (q *Queries) GetGifts(ctx context.Context) ([]Gift, error) {
 const getGiftsInfoByRecipient = `-- name: GetGiftsInfoByRecipient :many
 select g.id, g.name, g.link, g.target_amount, g.status, g.contract_address, g.jetton_address, g.event_id, g.recipient_id, g.admin_id, g.collected_amount, g.description, g.image_url,
        (select count(*) from giftlikes where giftlikes.gift_id = g.id) as likes_amount,
-                               exists(select 1 from giftlikes where giftlikes.user_id = $1 and giftlikes.gift_id = g.id)
-from Gifts g
-where g.recipient_id = $2
+       exists(select 1 from giftlikes where giftlikes.user_id = $1 and giftlikes.gift_id = g.id)
+from gifts g
+where g.event_id = $2
+  and g.recipient_id = $3
 `
 
 type GetGiftsInfoByRecipientParams struct {
 	UserID      int32
+	EventID     int32
 	RecipientID int32
 }
 
@@ -695,7 +719,7 @@ type GetGiftsInfoByRecipientRow struct {
 }
 
 func (q *Queries) GetGiftsInfoByRecipient(ctx context.Context, arg GetGiftsInfoByRecipientParams) ([]GetGiftsInfoByRecipientRow, error) {
-	rows, err := q.db.Query(ctx, getGiftsInfoByRecipient, arg.UserID, arg.RecipientID)
+	rows, err := q.db.Query(ctx, getGiftsInfoByRecipient, arg.UserID, arg.EventID, arg.RecipientID)
 	if err != nil {
 		return nil, err
 	}

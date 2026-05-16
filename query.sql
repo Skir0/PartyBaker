@@ -163,15 +163,15 @@ select p.id, u.first_name, u.last_name
 from participants p
          join users u on u.id = p.user_id
 where p.event_id = $1
-  and p.role = 'recipient';
-
+  and p.role in ('recipient', 'participant');
 
 -- name: GetGiftsInfoByRecipient :many
 select g.*,
        (select count(*) from giftlikes where giftlikes.gift_id = g.id) as likes_amount,
-                               exists(select 1 from giftlikes where giftlikes.user_id = $1 and giftlikes.gift_id = g.id)
-from Gifts g
-where g.recipient_id = $2;
+       exists(select 1 from giftlikes where giftlikes.user_id = $1 and giftlikes.gift_id = g.id)
+from gifts g
+where g.event_id = $2
+  and g.recipient_id = $3;
 
 -- name: AddGiftLike :exec
 insert into giftlikes (user_id, gift_id)
@@ -228,3 +228,13 @@ where g.id = r.id and g.status in ('active', 'selected');
 -- name: GetSelectedGiftsOfEvent :many
 select * from gifts
 where event_id = $1 and status = 'selected';
+
+
+-- name: CheckRecipientParticipantForEvent :one
+select exists(
+    select 1
+    from participants
+    where id = $1
+      and event_id = $2
+      and role in ('recipient', 'participant')
+);

@@ -16,18 +16,11 @@ func (r *Repository) GetUserBasicInfo(ctx context.Context, id int64) (db.GetUser
 	return userInfo, nil
 }
 
-func (r *Repository) GetRecipientsOfEvent(ctx context.Context, eventID int32) ([]db.GetGiftRecipientsOfCurrentEventRow, error) {
-	participants, err := r.query.GetGiftRecipientsOfCurrentEvent(ctx, eventID)
-	if err != nil {
-		return nil, err
-	}
-	return participants, nil
-}
-
-func (r *Repository) GetGiftsInfoByRecipient(ctx context.Context, userID int32, recipientID int32) ([]db.GetGiftsInfoByRecipientRow, error) {
+func (r *Repository) GetGiftsInfoByRecipient(ctx context.Context, userID int32, eventID int32, recipientID int32) ([]db.GetGiftsInfoByRecipientRow, error) {
 
 	response, err := r.query.GetGiftsInfoByRecipient(ctx, db.GetGiftsInfoByRecipientParams{
 		UserID:      userID,
+		EventID:     eventID,
 		RecipientID: recipientID,
 	})
 	if err != nil {

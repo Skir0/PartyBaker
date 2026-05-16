@@ -30,8 +30,22 @@ func (h *Handler) CreateGift(writer http.ResponseWriter, request *http.Request) 
 		writer.WriteHeader(http.StatusBadRequest)
 		return
 	}
+
 	idParam := chi.URLParam(request, "eventId")
 	eventID, err := strconv.Atoi(idParam)
+
+	// does current gift recipient participate in event
+	ans, err := h.repo.CheckRecipientParticipantForEvent(request.Context(), giftInfo.RecipientId, int32(eventID))
+	if err != nil {
+		fmt.Println(err)
+		writer.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	if !ans {
+		fmt.Println("eventID not found in repo")
+		http.Error(writer, "invalid recipient for event", http.StatusBadRequest)
+		return
+	}
 
 	currentUserID, ok := request.Context().Value(UserIDKey).(int64)
 	fmt.Println("currentUserID:", currentUserID)
@@ -53,7 +67,6 @@ func (h *Handler) CreateGift(writer http.ResponseWriter, request *http.Request) 
 	}
 	writer.WriteHeader(http.StatusCreated)
 	err = json.NewEncoder(writer).Encode("success")
-
 }
 
 func (h *Handler) UpdateGift(writer http.ResponseWriter, request *http.Request) {
@@ -138,6 +151,11 @@ func (h *Handler) GetGiftsInfoByRecipient(writer http.ResponseWriter, request *h
 		http.Error(writer, "unauthorized", http.StatusUnauthorized)
 		return
 	}
+
+	eventParam := chi.URLParam(request, "eventId")
+
+	eventID, err := strconv.Atoi(eventParam)
+
 	recipientParam := chi.URLParam(request, "recipientId")
 
 	recipientID, err := strconv.Atoi(recipientParam)
@@ -145,7 +163,7 @@ func (h *Handler) GetGiftsInfoByRecipient(writer http.ResponseWriter, request *h
 		http.Error(writer, "invalid recipient_id", http.StatusBadRequest)
 		return
 	}
-	info, err := h.repo.GetGiftsInfoByRecipient(request.Context(), int32(currentUserID), int32(recipientID))
+	info, err := h.repo.GetGiftsInfoByRecipient(request.Context(), int32(currentUserID), int32(eventID), int32(recipientID))
 	if err != nil {
 		return
 	}

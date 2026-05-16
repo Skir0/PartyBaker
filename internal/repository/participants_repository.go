@@ -14,7 +14,7 @@ func (r *Repository) GetRecipientsOfEvent(ctx context.Context, eventID int32) ([
 	return participants, nil
 }
 
-func (r *Repository) CheckRecipientParticipantForEvent(ctx context.Context, eventID int32, recipientID int32) (bool, error) {
+func (r *Repository) CheckRecipientParticipantForEvent(ctx context.Context, recipientID int32, eventID int32) (bool, error) {
 	ans, err := r.query.CheckRecipientParticipantForEvent(ctx, db.CheckRecipientParticipantForEventParams{
 		ID:      recipientID,
 		EventID: eventID,

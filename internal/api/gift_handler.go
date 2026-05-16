@@ -42,6 +42,7 @@ func (h *Handler) CreateGift(writer http.ResponseWriter, request *http.Request) 
 		return
 	}
 	if !ans {
+		fmt.Println("eventID not found in repo")
 		http.Error(writer, "invalid recipient for event", http.StatusBadRequest)
 		return
 	}
@@ -66,7 +67,6 @@ func (h *Handler) CreateGift(writer http.ResponseWriter, request *http.Request) 
 	}
 	writer.WriteHeader(http.StatusCreated)
 	err = json.NewEncoder(writer).Encode("success")
-
 }
 
 func (h *Handler) UpdateGift(writer http.ResponseWriter, request *http.Request) {

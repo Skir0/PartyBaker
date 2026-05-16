@@ -163,7 +163,7 @@ select p.id, u.first_name, u.last_name
 from participants p
          join users u on u.id = p.user_id
 where p.event_id = $1
-  and p.role = 'recipient' or 'participant';
+  and p.role in ('recipient', 'participant');
 
 -- name: GetGiftsInfoByRecipient :many
 select g.*,
@@ -236,5 +236,5 @@ select exists(
     from participants
     where id = $1
       and event_id = $2
-      and role = 'recipient' or 'participant'
+      and role in ('recipient', 'participant')
 );

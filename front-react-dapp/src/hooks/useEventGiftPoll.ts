@@ -6,6 +6,7 @@ import {
     getGiftsInfoByRecipient
 } from '../api/giftService.ts';
 
+
 import type {
     EventResponse,
     RecipientResponse
@@ -15,7 +16,7 @@ import type {
     GiftSuggestion,
     RecipientGiftFolder,
 } from '../types/gift.types.ts';
-import { getEventsOfCurrentUser } from '../api/eventService.ts';
+import { finalizeEvent, getEventsOfCurrentUser } from '../api/eventService.ts';
 import { getRecipientsOfEvent } from '../api/participantsService.ts';
 
 
@@ -70,7 +71,7 @@ function buildRecipientFolders(
 export function useEventGiftPoll(eventId: string | undefined, routeState: any) {
     const storageKey = eventId ? `eventGiftPoll.activeFolder.${eventId}` : null;
 
-    const [event, setEvent] = useState<EventResponse | null>();
+    const [event, setEvent] = useState<EventResponse | null>(null);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
     const [activeFolderId, setActiveFolderId] = useState<string>(() => {
@@ -80,8 +81,7 @@ export function useEventGiftPoll(eventId: string | undefined, routeState: any) {
     const [recipients, setRecipients] = useState<RecipientResponse[]>(routeState?.recipientsOfEvent ?? []);
     const [giftsByRecipient, setGiftsByRecipient] = useState<Record<number, GiftInfoResponse[]>>({});
     const [isLoadingRecipientGifts, setIsLoadingRecipientGifts] = useState<boolean>(false);
-
-
+    const [selectedGifts, setSelectedGifts] = useState<Record<number, GiftInfoResponse>>({})
 
     const recipientFolders = useMemo(() => {
         return buildRecipientFolders(recipients, giftsByRecipient);
@@ -96,30 +96,6 @@ export function useEventGiftPoll(eventId: string | undefined, routeState: any) {
         () => recipients.find((recipient) => `recipient-${recipient.id}` === activeFolderId) ?? recipients[0] ?? null,
         [activeFolderId, recipients]
     );
-
-    function getMostLikedGift(gifts: GiftInfoResponse[]): GiftInfoResponse | null {
-        if (gifts.length === 0) return null;
-
-        return gifts.reduce<GiftInfoResponse>((best, current) => {
-            const bestLikes = best.likes_amount ?? 0;
-            const currentLikes = current.likes_amount ?? 0;
-
-            if (currentLikes > bestLikes) return current;
-            if (currentLikes < bestLikes) return best;
-
-            return current.id < best.id ? current : best;
-        });
-    }
-
-    const activeMostLikedGift = useMemo(() => {
-        if (!activeRecipient) {
-            return null;
-        }
-        console.log(giftsByRecipient[activeRecipient.id])
-        return getMostLikedGift(giftsByRecipient[activeRecipient.id] ?? [])
-    }, [giftsByRecipient, activeRecipient])
-
-
 
 
     const handleToggleLike = async (giftId: number, currentlyLiked: boolean) => {
@@ -170,29 +146,48 @@ export function useEventGiftPoll(eventId: string | undefined, routeState: any) {
             });
         }
     };
+    const normalizeDate = (date: Date) =>
+        new Date(date.getFullYear(), date.getMonth(), date.getDate());
 
     const isDeadline = useMemo<boolean>(() => {
         if (!event?.deadline) {
             return false;
         }
-        const deadline = new Date(event.deadline);
-        const today = new Date();
+        const deadline = normalizeDate(new Date(event.deadline));
+        const today = normalizeDate(new Date());
 
-        console.log(deadline, today)
+        console.log("isDeadline" + (deadline <= today))
+        return deadline <= today;
+    }, [event?.deadline]);
 
-        deadline.setHours(0, 0, 0, 0);
-        today.setHours(0, 0, 0, 0);
-
-        if (deadline < today) {
-
-
-            // TODO backend logic
-
-            return true;
-
+    useEffect(() => {
+        if (!event?.id || !isDeadline) {
+            return
         }
-        return false;
-    }, [event?.deadline])
+
+        const loadSelectedGifts = async () => {
+            try {
+                const response = await finalizeEvent(event.id);
+
+                if (!Array.isArray(response)) {
+                    throw new Error('Invalid finalizeEvent response');
+                }
+
+                const selectedGiftsByRecipient: Record<number, GiftInfoResponse> = {};
+
+                response.forEach(giftInfo => {
+                    selectedGiftsByRecipient[giftInfo.recipient_id] = giftInfo;
+                });
+
+                setSelectedGifts(selectedGiftsByRecipient);
+            }
+            catch (error){
+                setError(current => current ?? `Failed to finalize event. ${error instanceof Error ? error.message : String(error)}`);
+            }
+        }
+
+        void loadSelectedGifts();
+    }, [isDeadline, event?.id])
 
     useEffect(() => {
         if (!storageKey) return;
@@ -222,8 +217,9 @@ export function useEventGiftPoll(eventId: string | undefined, routeState: any) {
                     setError('Event not found.');
                     return;
                 }
-
                 setEvent(matchedEvent);
+                console.log("Event loaded:", matchedEvent);
+
             } catch {
                 setError('Failed to load event.');
             } finally {
@@ -231,7 +227,7 @@ export function useEventGiftPoll(eventId: string | undefined, routeState: any) {
             }
         };
 
-        loadEvent();
+        void loadEvent();
     }, [event, eventId]);
 
     useEffect(() => {
@@ -328,6 +324,6 @@ export function useEventGiftPoll(eventId: string | undefined, routeState: any) {
         giftsByRecipient,
         setGiftsByRecipient,
         activeRecipient,
-        activeMostLikedGift
+        selectedGifts
     };
 }

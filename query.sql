@@ -202,7 +202,7 @@ select exists(
 
 -- name: GetEventInfoById :one
 select events.* , count(distinct p.id)::int as participants_count from events
-                                                           left join participants on events.id = participants.event_id
+                                                           left join participants p on events.id = p.event_id
 where events.id = $1
 group by events.id, name, date, deadline, admin_id, join_code
 limit 1;

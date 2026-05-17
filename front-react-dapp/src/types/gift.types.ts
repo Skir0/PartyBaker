@@ -26,8 +26,8 @@ export interface GiftInfoResponse {
     recipient_id: number;
     description: string;
     image_url: string;
-    likes_amount: number;
-    liked_by_user: boolean;
+    likes_amount?: number;
+    liked_by_user?: boolean;
 }
 
 export interface RecipientGiftFolder {

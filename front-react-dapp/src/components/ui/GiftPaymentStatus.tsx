@@ -34,7 +34,7 @@ const accentClassNames: Record<ParticipantAccent, string> = {
 };
 
 function formatAmount(amount: number): string {
-    return "amount.toString()";
+    return amount + "";
 }
 
 function getInitials(name: string): string {

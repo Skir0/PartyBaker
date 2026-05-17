@@ -4,7 +4,8 @@ import type { EventResponse, JoinEventResponse } from '../types/event-domain.typ
 
 export const finalizeEvent = async (eventId: number) => {
 
-    const response = await apiClient.post(`/events/${eventId}/finalize`);
+    const response = await apiClient.get(`api/events/${eventId}/finalize`);
+    console.log("in api:", response)
     return response.data;
 }
 

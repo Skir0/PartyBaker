@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-func FinalizeCheck(event db.GetEventInfoByIdRow, userId int32, writer http.ResponseWriter) bool {
+func FinalizeCheckProblem(event db.GetEventInfoByIdRow, userId int32, writer http.ResponseWriter) bool {
 
 	if !(event.AdminID == userId) {
 		writer.WriteHeader(http.StatusForbidden)

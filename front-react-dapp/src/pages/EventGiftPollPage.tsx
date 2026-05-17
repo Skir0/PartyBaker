@@ -39,7 +39,7 @@ export function EventGiftPollPage() {
         giftsByRecipient,
         setGiftsByRecipient,
         activeRecipient,
-        activeMostLikedGift
+        selectedGifts
     } = useEventGiftPoll(params.eventId, routeState);
 
     const {
@@ -101,7 +101,7 @@ export function EventGiftPollPage() {
                     <p className="py-10 text-center text-sm text-error">{error}</p>
                 )}
 
-                {!isLoading && !error && event && !isDeadline && (
+                {!isLoading && !error && event && isDeadline && (
                     <>
                         {isLoadingRecipientGifts && (
                             <p className="py-10 text-center text-sm text-on-surface-variant">
@@ -150,13 +150,13 @@ export function EventGiftPollPage() {
                         </p>
                     </>
                 )}
-                {!isDeadline && (
-                    <GiftPaymentStatus giftTitle={activeMostLikedGift?.name!}
+                {isDeadline && (
+                    <GiftPaymentStatus giftTitle={selectedGifts[activeRecipient.id]?.name!}
                                        eventTitle={event?.name!}
-                                       collectedAmount={activeMostLikedGift?.collected!}
-                                       targetAmount={activeMostLikedGift?.target_amount!}
+                                       collectedAmount={selectedGifts[activeRecipient.id]?.collected!}
+                                       targetAmount={selectedGifts[activeRecipient.id]?.target_amount!}
                                        participantsCount={event?.participants_amount!}
-                                       payAmount={activeMostLikedGift?.target_amount! / event?.participants_amount!}
+                                       payAmount={selectedGifts[activeRecipient.id]?.target_amount! / event?.participants_amount!}
                                        participants={[]}
                                        onBack={function(): void {
                         throw new Error('Function not implemented.');

@@ -214,6 +214,7 @@ func (h *Handler) RemoveGiftLike(writer http.ResponseWriter, request *http.Reque
 }
 
 func (h *Handler) FinalizeEventGifts(writer http.ResponseWriter, request *http.Request) {
+	fmt.Println("inside finalizeEventGifts")
 	currentUserID, ok := request.Context().Value(UserIDKey).(int64)
 	fmt.Println("currentUserID:", currentUserID)
 	if !ok {
@@ -240,7 +241,7 @@ func (h *Handler) FinalizeEventGifts(writer http.ResponseWriter, request *http.R
 	}
 
 	// finalize check
-	if FinalizeCheck(eventInfo, int32(currentUserID), writer) {
+	if FinalizeCheckProblem(eventInfo, int32(currentUserID), writer) {
 		return
 	}
 

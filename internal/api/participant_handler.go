@@ -1,6 +1,7 @@
 package api
 
 import (
+	"PartyBaker/internal/api/responses"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -32,6 +33,30 @@ func (h *Handler) GetRecipientsOfEvent(writer http.ResponseWriter, request *http
 
 	writer.Header().Set("Content-Type", "application/json")
 	writer.WriteHeader(http.StatusOK)
-	json.NewEncoder(writer).Encode(ConvertRecipientsToResponses(recipients))
+	json.NewEncoder(writer).Encode(responses.ConvertRecipientsToResponses(recipients))
+
+}
+
+func (h *Handler) GetPayersForRecipient(writer http.ResponseWriter, request *http.Request) {
+
+	fmt.Println("inside GetPayersForRecipient")
+	eventParam := chi.URLParam(request, "eventId")
+	eventID, err := strconv.Atoi(eventParam)
+	if err != nil {
+		http.Error(writer, "invalid event id", http.StatusBadRequest)
+		return
+	}
+	recipientParam := chi.URLParam(request, "recipientId")
+	recipientID, err := strconv.Atoi(recipientParam)
+	if err != nil {
+		http.Error(writer, "invalid recipient id", http.StatusBadRequest)
+		return
+	}
+
+	payers, err := h.repo.GetPayersForRecipient(request.Context(), int32(eventID), int32(recipientID))
+	if err != nil {
+		return
+	}
+	json.NewEncoder(writer).Encode(responses.ConvertPayersToResponses(payers))
 
 }

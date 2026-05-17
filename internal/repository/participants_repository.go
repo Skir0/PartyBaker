@@ -26,3 +26,16 @@ func (r *Repository) CheckRecipientParticipantForEvent(ctx context.Context, reci
 
 	return ans, nil
 }
+
+// GetPayersForRecipient receive list of payers who pay for recipient gift
+func (r *Repository) GetPayersForRecipient(ctx context.Context, recipientID int32, eventID int32) ([]db.GetPayersForRecipientRow, error) {
+	payers, err := r.query.GetPayersForRecipient(ctx, db.GetPayersForRecipientParams{
+		EventID: eventID,
+		ID:      recipientID,
+	})
+	if err != nil {
+		fmt.Println("repo err", err)
+		return nil, err
+	}
+	return payers, nil
+}

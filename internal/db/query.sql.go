@@ -754,6 +754,43 @@ func (q *Queries) GetGiftsInfoByRecipient(ctx context.Context, arg GetGiftsInfoB
 	return items, nil
 }
 
+const getPayersForRecipient = `-- name: GetPayersForRecipient :many
+select p.id, u.first_name, u.last_name from participants p
+         join users u on p.user_id = u.id
+where event_id = $1 and role in ('contributor', 'participant') and p.id != $2
+`
+
+type GetPayersForRecipientParams struct {
+	EventID int32
+	ID      int32
+}
+
+type GetPayersForRecipientRow struct {
+	ID        int32
+	FirstName pgtype.Text
+	LastName  pgtype.Text
+}
+
+func (q *Queries) GetPayersForRecipient(ctx context.Context, arg GetPayersForRecipientParams) ([]GetPayersForRecipientRow, error) {
+	rows, err := q.db.Query(ctx, getPayersForRecipient, arg.EventID, arg.ID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetPayersForRecipientRow
+	for rows.Next() {
+		var i GetPayersForRecipientRow
+		if err := rows.Scan(&i.ID, &i.FirstName, &i.LastName); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getSelectedGiftsOfEvent = `-- name: GetSelectedGiftsOfEvent :many
 select id, name, link, target_amount, status, contract_address, jetton_address, event_id, recipient_id, admin_id, collected_amount, description, image_url from gifts
 where event_id = $1 and status = 'selected'

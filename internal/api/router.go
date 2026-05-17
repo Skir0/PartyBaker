@@ -57,9 +57,12 @@ func NewRouter(h *Handler) *chi.Mux {
 				r.Delete("/", h.DeleteEvent)
 
 				// Работа с участниками
-				r.Get("/recipients", h.GetRecipientsOfEvent)
-				r.Route("/recipients/{recipientId}", func(r chi.Router) {
-					r.Get("/gifts", h.GetGiftsInfoByRecipient)
+				r.Route("/recipients", func(r chi.Router) {
+					r.Get("/", h.GetRecipientsOfEvent)
+					r.Route("/{recipientId}", func(r chi.Router) {
+						r.Get("/gifts", h.GetGiftsInfoByRecipient)
+						r.Get("/payers", h.GetPayersForRecipient)
+					})
 				})
 			})
 

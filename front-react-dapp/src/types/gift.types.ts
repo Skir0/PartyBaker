@@ -22,7 +22,7 @@ export interface GiftInfoResponse {
     contract_address: string;
     admin_id: number;
     target_amount: number;
-    collected: number;
+    collected_amount: number;
     recipient_id: number;
     description: string;
     image_url: string;

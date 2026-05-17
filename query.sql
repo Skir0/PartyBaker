@@ -238,3 +238,9 @@ select exists(
       and event_id = $2
       and role in ('recipient', 'participant')
 );
+
+
+-- name: GetPayersForRecipient :many
+select p.id, u.first_name, u.last_name from participants p
+         join users u on p.user_id = u.id
+where event_id = $1 and role in ('contributor', 'participant') and p.id != $2;

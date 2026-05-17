@@ -1,6 +1,7 @@
 package api
 
 import (
+	"PartyBaker/internal/api/responses"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -18,7 +19,7 @@ func (h *Handler) GetMyProfile(writer http.ResponseWriter, request *http.Request
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 	}
-	response := &BasicUserInfoResponse{
+	response := &responses.BasicUserInfoResponse{
 		Username:  userInfo.Username.String,
 		FirstName: userInfo.FirstName.String,
 		LastName:  userInfo.LastName.String,

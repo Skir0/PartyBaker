@@ -1,6 +1,7 @@
 package api
 
 import (
+	"PartyBaker/internal/api/responses"
 	"PartyBaker/internal/db"
 	"encoding/json"
 	"errors"
@@ -167,7 +168,7 @@ func (h *Handler) GetGiftsInfoByRecipient(writer http.ResponseWriter, request *h
 	if err != nil {
 		return
 	}
-	json.NewEncoder(writer).Encode(ConvertGiftsInfoToResponses(info))
+	json.NewEncoder(writer).Encode(responses.ConvertGiftsInfoToResponses(info))
 
 }
 
@@ -253,5 +254,5 @@ func (h *Handler) FinalizeEventGifts(writer http.ResponseWriter, request *http.R
 		return
 	}
 	writer.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(writer).Encode(ConvertGiftsToResponses(selectedGiftsInfo))
+	json.NewEncoder(writer).Encode(responses.ConvertGiftsToResponses(selectedGiftsInfo))
 }

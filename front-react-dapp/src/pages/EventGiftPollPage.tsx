@@ -83,7 +83,7 @@ export function EventGiftPollPage() {
             <TopAppBar title="Group Gift" onBack={() => navigate(-1)} />
 
             <main className="mx-auto max-w-2xl px-4 pb-24 pt-14">
-                <EventGiftPollHeader title="Gift Suggestions" subtitle={subtitle} />
+                <EventGiftPollHeader title="Gift Suggestions"subtitle={subtitle} />
                 {!isLoading && !error && (
                     <RecipientFolders
                         folders={recipientFolders}
@@ -101,7 +101,7 @@ export function EventGiftPollPage() {
                     <p className="py-10 text-center text-sm text-error">{error}</p>
                 )}
 
-                {!isLoading && !error && event && isDeadline && (
+                {!isLoading && !error && event && !isDeadline && (
                     <>
                         {isLoadingRecipientGifts && (
                             <p className="py-10 text-center text-sm text-on-surface-variant">
@@ -151,9 +151,10 @@ export function EventGiftPollPage() {
                     </>
                 )}
                 {isDeadline && (
-                    <GiftPaymentStatus giftTitle={selectedGifts[activeRecipient.id]?.name!}
-                                       eventTitle={event?.name!}
-                                       collectedAmount={selectedGifts[activeRecipient.id]?.collected!}
+                    <GiftPaymentStatus giftTitle={selectedGifts[activeRecipient.id]?.name}
+                                       eventId={event?.id!}
+                                       recipientId={activeRecipient.id}
+                                       collectedAmount={selectedGifts[activeRecipient.id]?.collected_amount}
                                        targetAmount={selectedGifts[activeRecipient.id]?.target_amount!}
                                        participantsCount={event?.participants_amount!}
                                        payAmount={selectedGifts[activeRecipient.id]?.target_amount! / event?.participants_amount!}

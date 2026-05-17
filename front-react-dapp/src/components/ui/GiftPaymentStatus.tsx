@@ -1,4 +1,5 @@
 import { MaterialIcon } from './MaterialIcon.tsx';
+import { useGiftPaymentStatus } from '../../hooks/useGiftPaymentStatus.ts';
 
 type ParticipantStatus = 'paid' | 'pending';
 type ParticipantAccent = 'secondary' | 'tertiary' | 'neutral' | 'primary';
@@ -12,14 +13,14 @@ export interface EventContributionParticipant {
 }
 
 interface GiftPaymentProps {
-    title?: string;
     giftTitle: string;
-    eventTitle: string;
     collectedAmount: number;
     targetAmount: number;
     participantsCount: number;
     payAmount: number;
     participants: EventContributionParticipant[];
+    eventId: number;
+    recipientId: number;
     onBack: () => void;
     onClose?: () => void;
     onPay: () => void;
@@ -34,7 +35,8 @@ const accentClassNames: Record<ParticipantAccent, string> = {
 };
 
 function formatAmount(amount: number): string {
-    return amount + "";
+    console.log("amount", amount)
+    return String(amount);
 }
 
 function getInitials(name: string): string {
@@ -47,18 +49,20 @@ function getInitials(name: string): string {
 }
 
 export function GiftPaymentStatus({
-    title = 'Group Gift',
     giftTitle,
-    eventTitle,
     collectedAmount,
     targetAmount,
     participantsCount,
-                                      participants,
+    participants,
+    eventId,
+    recipientId,
     onBack,
     onClose,
     onPay,
     onViewAllParticipants
 }: GiftPaymentProps) {
+
+    const {payers} = useGiftPaymentStatus(eventId, recipientId);
     const progress = targetAmount > 0 ? Math.min((collectedAmount / targetAmount) * 100, 100) : 0;
     const roundedProgress = Math.round(progress);
 
@@ -68,7 +72,6 @@ export function GiftPaymentStatus({
             <main className="mx-auto max-w-lg px-4 pb-32">
                 <section className="flex flex-col">
                     <h2 className="mb-1 text-center text-2xl font-bold text-on-surface">{giftTitle}</h2>
-                    <p className="mb-6 text-center text-sm text-on-surface-variant">{eventTitle}</p>
 
 
                     <div className="w-full rounded-xl border border-outline-variant/10 bg-surface-container-low p-5">
@@ -79,7 +82,7 @@ export function GiftPaymentStatus({
                                 </span>
                                 <div className="flex items-baseline gap-1">
                                     <span className="text-2xl font-bold text-primary">{formatAmount(collectedAmount)}</span>
-                                    <span className="text-sm font-medium text-primary">{"ton"}</span>
+                                    <span className="text-sm font-medium text-primary">{"usd"}</span>
                                 </div>
                             </div>
 
@@ -88,8 +91,8 @@ export function GiftPaymentStatus({
                                     Goal
                                 </span>
                                 <div className="flex items-baseline justify-end gap-1 text-on-surface-variant">
-                                    <span className="text-lg font-bold">{formatAmount(targetAmount)}</span>
-                                    <span className="text-xs font-medium">{"ton"}</span>
+                                    <span className="text-2xl font-bold">{formatAmount(targetAmount)}</span>
+                                    <span className="text-xs font-medium ">{"usd"}</span>
                                 </div>
                             </div>
                         </div>
@@ -114,29 +117,32 @@ export function GiftPaymentStatus({
                     </h3>
 
                     <div className="overflow-hidden rounded-xl border border-outline-variant/10 bg-surface-container-low">
-                        {participants.map((participant, index) => {
-                            const isPaid = participant.status === 'paid';
-                            const accent = participant.accent ?? 'neutral';
+                        {payers?.map((payer, index) => {
+
+                            // for test
+                            let isPaid = false;
+                            // const isPaid = participant.status === 'paid';
+                            // const accent = participant.accent ?? 'neutral';
 
                             return (
                                 <div
-                                    key={participant.id}
+                                    key={payer.id}
                                     className={`flex items-center justify-between bg-surface-container-lowest p-3 transition-colors active:bg-surface-container ${
                                         index > 0 ? 'border-t border-outline-variant/10' : ''
                                     }`}
                                 >
                                     <div className="flex items-center gap-3">
                                         <div
-                                            className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold ${accentClassNames[accent]}`}
+                                            className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold`}
                                         >
-                                            {getInitials(participant.name)}
+                                            {getInitials(payer.first_name)}
                                         </div>
 
                                         <div className="flex flex-col">
-                                            <span className="text-sm font-semibold text-on-surface">{participant.name}</span>
-                                            <span className="text-xs text-on-surface-variant">
-                                                {formatAmount(participant.amount)} {"ton"}
-                                            </span>
+                                            <span className="text-sm font-semibold text-on-surface">{payer.first_name}</span>
+                                            {/*<span className="text-xs text-on-surface-variant">*/}
+                                            {/*    {formatAmount(payer.amount)} {"ton"}*/}
+                                            {/*</span>*/}
                                         </div>
                                     </div>
 
@@ -179,7 +185,7 @@ export function GiftPaymentStatus({
                         className="flex h-14 w-full items-center justify-center gap-3 rounded-xl bg-[#005f9e] font-bold text-white shadow-lg shadow-primary/20 transition-all active:scale-[0.98]"
                     >
                         <span>
-                            Pay {"ton"}
+                            Pay {"usd"}
                         </span>
                         <div className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20">
                             <MaterialIcon icon="payments" fill size="text-xs" />

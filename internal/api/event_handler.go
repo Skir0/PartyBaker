@@ -1,6 +1,7 @@
 package api
 
 import (
+	"PartyBaker/internal/api/responses"
 	"PartyBaker/internal/db"
 	"PartyBaker/internal/utils"
 	"encoding/json"
@@ -29,7 +30,7 @@ func (h *Handler) GetEventsByUserID(writer http.ResponseWriter, request *http.Re
 		return
 	}
 
-	response := ConvertEventsToResponses(eventsInfo, currentUserID)
+	response := responses.ConvertEventsToResponses(eventsInfo, currentUserID)
 	json.NewEncoder(writer).Encode(response)
 }
 
@@ -159,7 +160,7 @@ func (h *Handler) JoinEventByCode(writer http.ResponseWriter, request *http.Requ
 		utils.ParseJsonString(joinUserInfo.Role))
 
 	if err != nil {
-		json.NewEncoder(writer).Encode(JoinEventResponse{eventId, err.Error()})
+		json.NewEncoder(writer).Encode(responses.JoinEventResponse{eventId, err.Error()})
 		return
 	}
 

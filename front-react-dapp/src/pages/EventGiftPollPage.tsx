@@ -130,7 +130,7 @@ export function EventGiftPollPage() {
                             </p>
                         )}
 
-                        <div className="py-3">
+                        <nav className="fixed bottom-0 left-0 right-0 w-full bg-surface-bright p-4 safe-bottom z-50">
                             <SuggestGiftButton
                                 onClick={() => {
                                     if (!params.eventId || !activeFolder?.id) return;
@@ -142,7 +142,7 @@ export function EventGiftPollPage() {
                                     });
                                 }}
                             />
-                        </div>
+                        </nav>
 
                         <p className="mb-4 mt-8 text-center text-[11px] text-on-surface-variant/60">
                             Polling ends on {event.deadline}. The selected gift can be finalized after the contribution
@@ -181,7 +181,7 @@ export function EventGiftPollPage() {
                 />
             </main>
 
-            <EventGiftPollNav />
+            {/*<EventGiftPollNav />*/}
 
 
         </div>

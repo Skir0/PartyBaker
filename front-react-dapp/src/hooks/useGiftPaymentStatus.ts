@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
-import type { RecipientResponse } from '../types/event-domain.types.ts';
-import { getPayersForRecipient } from '../api/participantsService.ts';
+import type { PayerResponse } from '../types/event-domain.types.ts';
+import { getPayersInfoForRecipient } from '../api/participantsService.ts';
 
 export function useGiftPaymentStatus(eventId: number, recipientId: number) {
-    const [allPayers, setAllPayers] = useState<RecipientResponse[]>();
-    const [visiblePayers, setVisiblePayers] = useState<RecipientResponse[]>([]);
+    const [allPayers, setAllPayers] = useState<PayerResponse[]>();
+    const [visiblePayers, setVisiblePayers] = useState<PayerResponse[]>([]);
     const [loadedCount, setLoadedCount] = useState(0);
     const [hasMore, setHasMore] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -12,11 +12,12 @@ export function useGiftPaymentStatus(eventId: number, recipientId: number) {
 
     useEffect(() => {
         const loadPayers = async () => {
-            const response = await getPayersForRecipient(eventId, recipientId) as RecipientResponse[];
+            const response = await getPayersInfoForRecipient(eventId, recipientId) as PayerResponse[];
             setAllPayers(response);
-            setLoadedCount(0);
+            setVisiblePayers(response.slice(0, Math.min(pageSize, response.length)))
+            setLoadedCount(Math.min(pageSize, response.length));
             if (response) {
-                setHasMore(response.length > 0);
+                setHasMore(response.length > 0 && response.length > pageSize);
                 await loadMore();
             }
         };

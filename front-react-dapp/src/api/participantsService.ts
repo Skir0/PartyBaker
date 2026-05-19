@@ -6,7 +6,7 @@ export const getRecipientsOfEvent = async (eventId: number) => {
     return response.data;
 };
 
-export const getPayersForRecipient = async (eventId: number, recipientId: number) => {
+export const getPayersInfoForRecipient = async (eventId: number, recipientId: number) => {
 
     const response = await apiClient.get(`/api/events/${eventId}/recipients/${recipientId}/payers`);
     return response.data;

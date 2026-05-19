@@ -10,11 +10,10 @@ type RecipientResponse struct {
 
 type PayerResponse struct {
 	Id        int32  `json:"id"`
-	UserId    int32  `json:"user_id"`
 	FirstName string `json:"first_name"`
 	LastName  string `json:"last_name"`
-	Role      string `json:"role"`
-	EventID   int32  `json:"event_id"`
+	IsPaid    bool   `json:"is_paid"`
+	Amount    int32  `json:"amount"`
 }
 
 func ConvertRecipientsToResponses(recipients []db.GetGiftRecipientsOfCurrentEventRow) []RecipientResponse {
@@ -29,13 +28,15 @@ func ConvertRecipientsToResponses(recipients []db.GetGiftRecipientsOfCurrentEven
 	return recipientResponses
 }
 
-func ConvertPayersToResponses(payers []db.GetPayersForRecipientRow) []RecipientResponse {
-	recipientResponses := make([]RecipientResponse, len(payers))
+func ConvertPayersInfoToResponses(payers []db.GetPayersInfoForRecipientRow) []PayerResponse {
+	recipientResponses := make([]PayerResponse, len(payers))
 	for i, payer := range payers {
-		recipientResponses[i] = RecipientResponse{
+		recipientResponses[i] = PayerResponse{
 			Id:        payer.ID,
 			FirstName: payer.FirstName.String,
 			LastName:  payer.LastName.String,
+			IsPaid:    payer.IsPaid.Bool,
+			Amount:    int32(payer.Amount.Int64),
 		}
 	}
 	return recipientResponses

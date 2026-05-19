@@ -117,7 +117,7 @@ export function GiftPaymentStatus({
 
                     <div className="overflow-hidden rounded-xl border border-outline-variant/10 bg-surface-container-low">
                         {visiblePayers?.map((payer, index) => {
-                            let isPaid = false;
+                            let isPaid = payer.is_paid;
                             return (
                                 <div
                                     key={payer.id}
@@ -178,7 +178,7 @@ export function GiftPaymentStatus({
                     )}
                 </section>
 
-                <div className="mx-auto w-full max-w-lg mt-8">
+                <div className="fixed bottom-0 left-0 right-0 w-full mx-auto w-full max-w-lg">
                     <button
                         type="button"
                         onClick={onPay}

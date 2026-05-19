@@ -61,7 +61,7 @@ func NewRouter(h *Handler) *chi.Mux {
 					r.Get("/", h.GetRecipientsOfEvent)
 					r.Route("/{recipientId}", func(r chi.Router) {
 						r.Get("/gifts", h.GetGiftsInfoByRecipient)
-						r.Get("/payers", h.GetPayersForRecipient)
+						r.Get("/payers", h.GetPayersInfoForRecipient)
 					})
 				})
 			})

@@ -13,6 +13,14 @@ export interface RecipientResponse {
     last_name: string;
 }
 
+export interface PayerResponse {
+    id: number;
+    first_name: string;
+    last_name: string;
+    is_paid: boolean;
+    amount?: number;
+}
+
 export interface JoinEventResponse {
     event_id: number;
     error: string;

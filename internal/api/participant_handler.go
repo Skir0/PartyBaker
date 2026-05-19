@@ -34,7 +34,37 @@ func (h *Handler) GetRecipientsOfEvent(writer http.ResponseWriter, request *http
 
 }
 
-func (h *Handler) GetPayersForRecipient(writer http.ResponseWriter, request *http.Request) {
+//
+//func (h *Handler) GetPayersForRecipient(writer http.ResponseWriter, request *http.Request) {
+//
+//	fmt.Println("inside GetPayersForRecipient")
+//	eventParam := chi.URLParam(request, "eventId")
+//	eventID, err := strconv.Atoi(eventParam)
+//	if err != nil {
+//		http.Error(writer, "invalid event id", http.StatusBadRequest)
+//		return
+//	}
+//	recipientParam := chi.URLParam(request, "recipientId")
+//	recipientID, err := strconv.Atoi(recipientParam)
+//
+//	fmt.Println("recipientID:", recipientID)
+//	fmt.Println("eventID:", eventID)
+//
+//	if err != nil {
+//		http.Error(writer, "invalid recipient id", http.StatusBadRequest)
+//		return
+//	}
+//
+//	payers, err := h.repo.GetPayersForRecipient(request.Context(), int32(recipientID), int32(eventID))
+//	fmt.Println("payers:", payers)
+//	if err != nil {
+//		return
+//	}
+//	json.NewEncoder(writer).Encode(responses.ConvertPayersToResponses(payers))
+//
+//}
+
+func (h *Handler) GetPayersInfoForRecipient(writer http.ResponseWriter, request *http.Request) {
 
 	fmt.Println("inside GetPayersForRecipient")
 	eventParam := chi.URLParam(request, "eventId")
@@ -54,11 +84,11 @@ func (h *Handler) GetPayersForRecipient(writer http.ResponseWriter, request *htt
 		return
 	}
 
-	payers, err := h.repo.GetPayersForRecipient(request.Context(), int32(recipientID), int32(eventID))
+	payers, err := h.repo.GetPayersInfoForRecipient(request.Context(), int32(recipientID), int32(eventID))
 	fmt.Println("payers:", payers)
 	if err != nil {
 		return
 	}
-	json.NewEncoder(writer).Encode(responses.ConvertPayersToResponses(payers))
+	json.NewEncoder(writer).Encode(responses.ConvertPayersInfoToResponses(payers))
 
 }

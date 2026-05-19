@@ -796,6 +796,53 @@ func (q *Queries) GetPayersForRecipient(ctx context.Context, arg GetPayersForRec
 	return items, nil
 }
 
+const getPayersInfoForRecipient = `-- name: GetPayersInfoForRecipient :many
+select p.id, u.first_name, u.last_name, pg.is_paid, pg.amount from participants p
+                                        join users u on p.user_id = u.id
+                                        join participant_gift pg on p.id = pg.participant_id
+                                        join gifts g on pg.gift_id = g.id
+where p.event_id = $1 and role in ('contributor', 'participant') and p.id != $2 and g.recipient_id = $2
+`
+
+type GetPayersInfoForRecipientParams struct {
+	EventID int32
+	ID      int32
+}
+
+type GetPayersInfoForRecipientRow struct {
+	ID        int32
+	FirstName pgtype.Text
+	LastName  pgtype.Text
+	IsPaid    pgtype.Bool
+	Amount    pgtype.Int8
+}
+
+func (q *Queries) GetPayersInfoForRecipient(ctx context.Context, arg GetPayersInfoForRecipientParams) ([]GetPayersInfoForRecipientRow, error) {
+	rows, err := q.db.Query(ctx, getPayersInfoForRecipient, arg.EventID, arg.ID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetPayersInfoForRecipientRow
+	for rows.Next() {
+		var i GetPayersInfoForRecipientRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.FirstName,
+			&i.LastName,
+			&i.IsPaid,
+			&i.Amount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getSelectedGiftsOfEvent = `-- name: GetSelectedGiftsOfEvent :many
 select id, name, link, target_amount, status, contract_address, jetton_address, event_id, recipient_id, admin_id, collected_amount, description, image_url from gifts
 where event_id = $1 and status = 'selected'

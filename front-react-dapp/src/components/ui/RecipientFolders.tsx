@@ -18,6 +18,7 @@ export function RecipientFolders({
                 {folders.map((folder) => {
                     const isActive = folder.id === activeFolderId;
 
+
                     return (
                         <button
                             key={folder.id}

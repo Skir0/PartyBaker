@@ -617,9 +617,14 @@ const getGiftRecipientsOfCurrentEvent = `-- name: GetGiftRecipientsOfCurrentEven
 select p.id, u.first_name, u.last_name
 from participants p
          join users u on u.id = p.user_id
-where p.event_id = $1
+where p.event_id = $1 and p.user_id != $2
   and p.role in ('recipient', 'participant')
 `
+
+type GetGiftRecipientsOfCurrentEventParams struct {
+	EventID int32
+	UserID  int32
+}
 
 type GetGiftRecipientsOfCurrentEventRow struct {
 	ID        int32
@@ -627,8 +632,8 @@ type GetGiftRecipientsOfCurrentEventRow struct {
 	LastName  pgtype.Text
 }
 
-func (q *Queries) GetGiftRecipientsOfCurrentEvent(ctx context.Context, eventID int32) ([]GetGiftRecipientsOfCurrentEventRow, error) {
-	rows, err := q.db.Query(ctx, getGiftRecipientsOfCurrentEvent, eventID)
+func (q *Queries) GetGiftRecipientsOfCurrentEvent(ctx context.Context, arg GetGiftRecipientsOfCurrentEventParams) ([]GetGiftRecipientsOfCurrentEventRow, error) {
+	rows, err := q.db.Query(ctx, getGiftRecipientsOfCurrentEvent, arg.EventID, arg.UserID)
 	if err != nil {
 		return nil, err
 	}

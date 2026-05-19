@@ -14,10 +14,7 @@ func (h *Handler) GetRecipientsOfEvent(writer http.ResponseWriter, request *http
 	fmt.Println("inside GetGiftRecipientsOfEvent")
 	idParam := chi.URLParam(request, "eventId")
 	eventID, err := strconv.Atoi(idParam)
-	if err != nil {
-		http.Error(writer, "invalid event id", http.StatusBadRequest)
-		return
-	}
+
 	currentUserID, ok := request.Context().Value(UserIDKey).(int64)
 	fmt.Println("currentUserID:", currentUserID)
 	if !ok {
@@ -25,7 +22,7 @@ func (h *Handler) GetRecipientsOfEvent(writer http.ResponseWriter, request *http
 		return
 	}
 
-	recipients, err := h.repo.GetRecipientsOfEvent(request.Context(), int32(eventID))
+	recipients, err := h.repo.GetRecipientsOfEvent(request.Context(), int32(eventID), int32(currentUserID))
 	if err != nil {
 		http.Error(writer, "failed to load recipients", http.StatusInternalServerError)
 		return
@@ -48,12 +45,17 @@ func (h *Handler) GetPayersForRecipient(writer http.ResponseWriter, request *htt
 	}
 	recipientParam := chi.URLParam(request, "recipientId")
 	recipientID, err := strconv.Atoi(recipientParam)
+
+	fmt.Println("recipientID:", recipientID)
+	fmt.Println("eventID:", eventID)
+
 	if err != nil {
 		http.Error(writer, "invalid recipient id", http.StatusBadRequest)
 		return
 	}
 
-	payers, err := h.repo.GetPayersForRecipient(request.Context(), int32(eventID), int32(recipientID))
+	payers, err := h.repo.GetPayersForRecipient(request.Context(), int32(recipientID), int32(eventID))
+	fmt.Println("payers:", payers)
 	if err != nil {
 		return
 	}

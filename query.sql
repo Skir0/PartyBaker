@@ -162,7 +162,7 @@ where id = $1 and admin_id = $2;
 select p.id, u.first_name, u.last_name
 from participants p
          join users u on u.id = p.user_id
-where p.event_id = $1
+where p.event_id = $1 and p.user_id != $2
   and p.role in ('recipient', 'participant');
 
 -- name: GetGiftsInfoByRecipient :many

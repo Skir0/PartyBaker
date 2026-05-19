@@ -105,7 +105,7 @@ export function GiftPaymentStatus({
                             <span>{roundedProgress}% Funded</span>
                             <span className="flex items-center gap-1">
                                 <MaterialIcon icon="group" size="text-xs" />
-                                {participantsCount} Participants
+                                {payers?.length} Contributors
                             </span>
                         </div>
                     </div>
@@ -113,7 +113,7 @@ export function GiftPaymentStatus({
 
                 <section className="mt-8">
                     <h3 className="mb-3 px-1 text-xs font-bold uppercase tracking-widest text-on-surface-variant">
-                        Participants
+                        Contributors
                     </h3>
 
                     <div className="overflow-hidden rounded-xl border border-outline-variant/10 bg-surface-container-low">
@@ -175,9 +175,7 @@ export function GiftPaymentStatus({
                         </button>
                     )}
                 </section>
-            </main>
 
-            <footer className="safe-bottom fixed bottom-0 left-0 right-0 z-50 border-t border-outline-variant/10 bg-background/90 p-4 backdrop-blur-lg">
                 <div className="mx-auto w-full max-w-lg">
                     <button
                         type="button"
@@ -196,6 +194,10 @@ export function GiftPaymentStatus({
                         Secured by Telegram Payment API
                     </p>
                 </div>
+            </main>
+
+            <footer className="safe-bottom fixed bottom-0 left-0 right-0 z-50 border-t border-outline-variant/10 bg-background/90 p-4 backdrop-blur-lg">
+
             </footer>
         </div>
     );

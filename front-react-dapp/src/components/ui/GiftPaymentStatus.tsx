@@ -62,7 +62,7 @@ export function GiftPaymentStatus({
     onViewAllParticipants
 }: GiftPaymentProps) {
 
-    const {payers} = useGiftPaymentStatus(eventId, recipientId);
+    const { visiblePayers, hasMore, loadMore, isLoading, allPayers } = useGiftPaymentStatus(eventId, recipientId);
     const progress = targetAmount > 0 ? Math.min((collectedAmount / targetAmount) * 100, 100) : 0;
     const roundedProgress = Math.round(progress);
 
@@ -72,7 +72,6 @@ export function GiftPaymentStatus({
             <main className="mx-auto max-w-lg px-4 pb-32">
                 <section className="flex flex-col">
                     <h2 className="mb-1 text-center text-2xl font-bold text-on-surface">{giftTitle}</h2>
-
 
                     <div className="w-full rounded-xl border border-outline-variant/10 bg-surface-container-low p-5">
                         <div className="mb-3 flex items-end justify-between">
@@ -105,7 +104,7 @@ export function GiftPaymentStatus({
                             <span>{roundedProgress}% Funded</span>
                             <span className="flex items-center gap-1">
                                 <MaterialIcon icon="group" size="text-xs" />
-                                {payers?.length} Contributors
+                                {visiblePayers?.length} Contributors
                             </span>
                         </div>
                     </div>
@@ -117,13 +116,8 @@ export function GiftPaymentStatus({
                     </h3>
 
                     <div className="overflow-hidden rounded-xl border border-outline-variant/10 bg-surface-container-low">
-                        {payers?.map((payer, index) => {
-
-                            // for test
+                        {visiblePayers?.map((payer, index) => {
                             let isPaid = false;
-                            // const isPaid = participant.status === 'paid';
-                            // const accent = participant.accent ?? 'neutral';
-
                             return (
                                 <div
                                     key={payer.id}
@@ -140,9 +134,6 @@ export function GiftPaymentStatus({
 
                                         <div className="flex flex-col">
                                             <span className="text-sm font-semibold text-on-surface">{payer.first_name}</span>
-                                            {/*<span className="text-xs text-on-surface-variant">*/}
-                                            {/*    {formatAmount(payer.amount)} {"ton"}*/}
-                                            {/*</span>*/}
                                         </div>
                                     </div>
 
@@ -165,18 +156,29 @@ export function GiftPaymentStatus({
                         })}
                     </div>
 
+                    {hasMore && (
+                        <button
+                            type="button"
+                            onClick={loadMore}
+                            disabled={isLoading}
+                            className="mt-4 w-full rounded-lg py-2 text-sm font-bold text-primary transition-all active:bg-primary/10 disabled:opacity-50"
+                        >
+                            {isLoading ? 'Loading...' : `Load ${Math.min(5, allPayers?.length! - visiblePayers.length || 0)} More`}
+                        </button>
+                    )}
+
                     {onViewAllParticipants && (
                         <button
                             type="button"
                             onClick={onViewAllParticipants}
-                            className="mt-4 w-full rounded-lg py-2 text-sm font-semibold text-primary transition-all active:bg-primary/10"
+                            className="mt-4 w-full rounded-lg py-2 text-sm font-bold text-primary transition-all active:bg-primary/10"
                         >
                             View all {participantsCount} participants
                         </button>
                     )}
                 </section>
 
-                <div className="mx-auto w-full max-w-lg">
+                <div className="mx-auto w-full max-w-lg mt-8">
                     <button
                         type="button"
                         onClick={onPay}
@@ -186,7 +188,7 @@ export function GiftPaymentStatus({
                             Pay {"usd"}
                         </span>
                         <div className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20">
-                            <MaterialIcon icon="payments" fill size="text-xs" />
+                            <MaterialIcon icon="payments" fill size="text-sm" />
                         </div>
                     </button>
 

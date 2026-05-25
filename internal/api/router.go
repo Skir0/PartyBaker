@@ -27,6 +27,9 @@ func NewRouter(h *Handler) *chi.Mux {
 		r.Route("/gifts", func(r chi.Router) {
 			r.Route("/{giftId}", func(r chi.Router) {
 
+				// for test
+				// r.Post("/deploy", h.DeployGiftContract)
+
 				// admin controls
 				r.Put("/", h.UpdateGift)
 				r.Delete("/", h.DeleteGift)

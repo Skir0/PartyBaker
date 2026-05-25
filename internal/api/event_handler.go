@@ -25,7 +25,7 @@ func (h *Handler) GetEventsByUserID(writer http.ResponseWriter, request *http.Re
 
 	eventsInfo, err := h.repo.GetEventsInfoByUserId(request.Context(), int32(currentUserID))
 	if err != nil {
-		fmt.Errorf(err.Error())
+		fmt.Println(err)
 		writer.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -41,7 +41,7 @@ func (h *Handler) CreateEvent(writer http.ResponseWriter, request *http.Request)
 	eventInfo := &CreateEventRequest{}
 	err := json.NewDecoder(request.Body).Decode(eventInfo)
 	if err != nil {
-		fmt.Errorf(err.Error())
+		fmt.Println(err)
 		writer.WriteHeader(http.StatusInternalServerError)
 		return
 	}

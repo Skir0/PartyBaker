@@ -410,8 +410,10 @@ func (q *Queries) FinalizeGiftStatusesOfEvent(ctx context.Context, eventID int32
 
 const getAllActiveGiftsAddresses = `-- name: GetAllActiveGiftsAddresses :many
 select contract_address
-from Gifts
-where status = 'active'
+from gifts
+where contract_address is not null
+  and contract_address <> ''
+  and status in ('active', 'selected')
 `
 
 func (q *Queries) GetAllActiveGiftsAddresses(ctx context.Context) ([]pgtype.Text, error) {
@@ -609,6 +611,44 @@ func (q *Queries) GetGiftByContract(ctx context.Context, contractAddress pgtype.
 		&i.CollectedAmount,
 		&i.Description,
 		&i.ImageUrl,
+	)
+	return i, err
+}
+
+const getGiftForDeployment = `-- name: GetGiftForDeployment :one
+select id, target_amount, status, contract_address,
+       admin_id, collected_amount
+from gifts
+where id = $1
+  and admin_id = $2
+  and status in ('selected', 'active')
+limit 1
+`
+
+type GetGiftForDeploymentParams struct {
+	ID      int32
+	AdminID int32
+}
+
+type GetGiftForDeploymentRow struct {
+	ID              int32
+	TargetAmount    pgtype.Int8
+	Status          string
+	ContractAddress pgtype.Text
+	AdminID         int32
+	CollectedAmount pgtype.Int8
+}
+
+func (q *Queries) GetGiftForDeployment(ctx context.Context, arg GetGiftForDeploymentParams) (GetGiftForDeploymentRow, error) {
+	row := q.db.QueryRow(ctx, getGiftForDeployment, arg.ID, arg.AdminID)
+	var i GetGiftForDeploymentRow
+	err := row.Scan(
+		&i.ID,
+		&i.TargetAmount,
+		&i.Status,
+		&i.ContractAddress,
+		&i.AdminID,
+		&i.CollectedAmount,
 	)
 	return i, err
 }
@@ -902,6 +942,20 @@ func (q *Queries) GetUserBasicInfo(ctx context.Context, id int64) (GetUserBasicI
 	return i, err
 }
 
+const getUserWalletAddress = `-- name: GetUserWalletAddress :one
+select wallet_address
+from users
+where id = $1
+limit 1
+`
+
+func (q *Queries) GetUserWalletAddress(ctx context.Context, id int64) (pgtype.Text, error) {
+	row := q.db.QueryRow(ctx, getUserWalletAddress, id)
+	var wallet_address pgtype.Text
+	err := row.Scan(&wallet_address)
+	return wallet_address, err
+}
+
 const increaseCollectedAmount = `-- name: IncreaseCollectedAmount :exec
 update Gifts
 set collected_amount = collected_amount - $1
@@ -976,6 +1030,24 @@ type RemoveGiftLikeParams struct {
 
 func (q *Queries) RemoveGiftLike(ctx context.Context, arg RemoveGiftLikeParams) error {
 	_, err := q.db.Exec(ctx, removeGiftLike, arg.UserID, arg.GiftID)
+	return err
+}
+
+const saveGiftForDeployment = `-- name: SaveGiftForDeployment :exec
+update gifts
+set contract_address = $1
+where id = $2
+  and admin_id = $3
+`
+
+type SaveGiftForDeploymentParams struct {
+	ContractAddress pgtype.Text
+	ID              int32
+	AdminID         int32
+}
+
+func (q *Queries) SaveGiftForDeployment(ctx context.Context, arg SaveGiftForDeploymentParams) error {
+	_, err := q.db.Exec(ctx, saveGiftForDeployment, arg.ContractAddress, arg.ID, arg.AdminID)
 	return err
 }
 

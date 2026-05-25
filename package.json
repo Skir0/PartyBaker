@@ -9,8 +9,10 @@
         "release": "blueprint pack && npm publish --access public"
     },
     "dependencies": {
+        "@ton-pay/api": "^0.3.2",
+        "@ton-pay/ui-react": "^0.3.2",
         "@ton/core": "~0",
-        "@tonconnect/ui-react": "^2.4.2",
+        "@tonconnect/ui-react": "^2.4.4",
         "axios": "^1.13.6"
     },
     "devDependencies": {

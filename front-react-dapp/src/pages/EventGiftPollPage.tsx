@@ -3,11 +3,10 @@ import { TopAppBar } from '../components/ui/TopAppBar.tsx';
 import { EventGiftPollHeader } from '../components/ui/EventGiftPollHeader.tsx';
 import { SuggestGiftButton } from '../components/ui/SuggestGiftButton.tsx';
 import { GiftSuggestionCard } from '../components/cards/GiftSuggestionCard.tsx';
-import { EventGiftPollNav } from '../components/ui/EventGiftPollNav.tsx';
 import { RecipientFolders } from '../components/ui/RecipientFolders.tsx';
 
 import {
-    type RecipientResponse,
+    type RecipientResponse
 } from '../types/event-domain.types.ts';
 import type { GiftFormData } from '../types/form.types.ts';
 import { SheetType } from '../types/sheet.types.ts';
@@ -73,7 +72,7 @@ export function EventGiftPollPage() {
 
         const gift = giftsByRecipient[recipientId]?.find((g) => g.id === giftId);
         if (!gift) return false;
-        console.log("id", userId);
+        console.log('id', userId);
 
         return gift.admin_id === userId;
     }
@@ -83,7 +82,7 @@ export function EventGiftPollPage() {
             <TopAppBar title="Group Gift" onBack={() => navigate(-1)} />
 
             <main className="mx-auto max-w-2xl px-4 pb-24 pt-14">
-                <EventGiftPollHeader title="Gift Suggestions"subtitle={subtitle} />
+                <EventGiftPollHeader title="Gift Suggestions" subtitle={subtitle} />
                 {!isLoading && !error && (
                     <RecipientFolders
                         folders={recipientFolders}
@@ -114,7 +113,7 @@ export function EventGiftPollPage() {
                                 <GiftSuggestionCard key={suggestion.id} suggestion={suggestion}
                                                     handleToggleLike={handleToggleLike}
                                                     onSettingsClick={() => adminSettingsClick(suggestion.id)}
-                                                    isAdmin={checkAdmin(suggestion.id)}/>
+                                                    isAdmin={checkAdmin(suggestion.id)} />
                             ))}
                         </section>
 
@@ -151,19 +150,20 @@ export function EventGiftPollPage() {
                     </>
                 )}
                 {isDeadline && (
-                    <GiftPaymentStatus giftTitle={selectedGifts[activeRecipient.id]?.name}
-                                       eventId={event?.id!}
-                                       recipientId={activeRecipient.id}
-                                       collectedAmount={selectedGifts[activeRecipient.id]?.collected_amount}
-                                       targetAmount={selectedGifts[activeRecipient.id]?.target_amount!}
-                                       participantsCount={event?.participants_amount!}
-                                       payAmount={selectedGifts[activeRecipient.id]?.target_amount! / event?.participants_amount!}
-                                       participants={[]}
-                                       onBack={function(): void {
+                    <GiftPaymentStatus
+                        giftId={selectedGifts[activeRecipient.id]?.id}
+                        contractAddress={selectedGifts[activeRecipient.id]?.contract_address}
+                        giftTitle={selectedGifts[activeRecipient.id]?.name}
+                        eventId={event?.id!}
+                        recipientId={activeRecipient.id}
+                        collectedAmount={selectedGifts[activeRecipient.id]?.collected_amount}
+                        targetAmount={selectedGifts[activeRecipient.id]?.target_amount!}
+                        payAmount={selectedGifts[activeRecipient.id]?.target_amount! / event?.participants_amount!}
+                        onBack={function(): void {
+                            throw new Error('Function not implemented.');
+                        }} onPay={function(): void {
                         throw new Error('Function not implemented.');
-                    } } onPay={function(): void {
-                        throw new Error('Function not implemented.');
-                    } }/>
+                    }} />
                 )}
 
 

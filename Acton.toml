@@ -1,0 +1,31 @@
+[package]
+name = "my-acton-project"
+description = "A TON blockchain project"
+version = "0.1.0"
+license = "MIT"
+
+[contracts.gift_wallet_contract]
+display-name = "Gift Wallet Contract"
+src = "contracts/gift-wallet-contract.tolk"
+depends = []
+
+[contracts.jetton_minter_contract]
+display-name = "Jetton Minter Contract"
+src = "tolk-jetton-blueprint/contracts/jetton-minter-contract.tolk"
+depends = []
+
+[contracts.jetton_wallet_contract]
+display-name = "Jetton Wallet Contract"
+src = "tolk-jetton-blueprint/contracts/jetton-wallet-contract.tolk"
+depends = []
+
+[fmt]
+width = 100
+ignore = []
+
+[import-mappings]
+acton = ".acton"
+contracts = "contracts"
+gen = "gen"
+tests = "tests"
+wrappers = "wrappers"

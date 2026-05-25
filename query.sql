@@ -49,8 +49,10 @@ order by e.date asc;
 
 -- name: GetAllActiveGiftsAddresses :many
 select contract_address
-from Gifts
-where status = 'active';
+from gifts
+where contract_address is not null
+  and contract_address <> ''
+  and status in ('active', 'selected');
 
 
 -- name: GetGifts :many
@@ -251,3 +253,25 @@ select p.id, u.first_name, u.last_name, pg.is_paid, pg.amount from participants 
                                         join participant_gift pg on p.id = pg.participant_id
                                         join gifts g on pg.gift_id = g.id
 where p.event_id = $1 and role in ('contributor', 'participant') and p.id != $2 and g.recipient_id = $2;
+
+-- name: GetGiftForDeployment :one
+select id, target_amount, status, contract_address,
+       admin_id, collected_amount
+from gifts
+where id = $1
+  and admin_id = $2
+  and status in ('selected', 'active')
+limit 1;
+
+-- name: GetUserWalletAddress :one
+select wallet_address
+from users
+where id = $1
+limit 1;
+
+
+-- name: SaveGiftForDeployment :exec
+update gifts
+set contract_address = $1
+where id = $2
+  and admin_id = $3;

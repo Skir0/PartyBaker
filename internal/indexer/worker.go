@@ -33,18 +33,20 @@ func (worker *Worker) UpdateCache(ctx context.Context) {
 	newCache := make(map[string]bool)
 	for _, addr := range ads {
 		parsedAddr, err := address.ParseAddr(addr.String)
+		if err != nil {
+			log.Println("skip invalid contract address:", addr.String, err)
+			continue
+		}
 		log.Println("pgtype:", addr)
 		log.Println("CACHE:", parsedAddr.StringRaw())
 
 		tokenClient := jetton.NewJettonMasterClient(worker.api, blockchain.ACCEPTED_MINTER_COOKIE_ADDRESS)
 
 		jwAddress, err := tokenClient.GetJettonWallet(ctx, parsedAddr)
-
-		fmt.Println("jwAddress:", jwAddress.Address())
-
 		if err != nil {
 			continue
 		}
+		fmt.Println("jwAddress:", jwAddress.Address())
 		newCache[parsedAddr.StringRaw()] = true
 	}
 	worker.activeGifts = newCache
@@ -101,7 +103,7 @@ func getAmountFromOutMsg(transaction *tlb.Transaction) (pgtype.Int8, error) {
 		}
 
 	}
-	return pgtype.Int8{}, fmt.Errorf("сообщение AskToTransfer не найдено", err)
+	return pgtype.Int8{}, fmt.Errorf("сообщение AskToTransfer не найдено")
 }
 
 func (worker *Worker) processTransaction(transaction *tlb.Transaction, ctx context.Context, contractAddress pgtype.Text) error {

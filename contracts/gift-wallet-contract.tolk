@@ -62,7 +62,6 @@ fun onInternalMessage(in: InMessage) {
                         forwardTonAmount: ton("0.01"),
                         forwardPayload: beginCell()
                             .storeUint(0, 32)
-                            .storeSlice("Collect total sum for gift, send money to buyer")
                             .endCell()
                     }
                 });
@@ -115,7 +114,6 @@ fun onInternalMessage(in: InMessage) {
                     customPayload: null,
                     forwardTonAmount: ton("0.01"),
                     forwardPayload: beginCell()
-                        .storeSlice("Return")
                         .endCell()
                 }
             });

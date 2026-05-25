@@ -39,6 +39,14 @@ type CreateGiftRequest struct {
 	ImageUrl        string `json:"image_url"`
 }
 
+type GiftContractRequest struct {
+	Status          int32            `json:"status"`
+	TargetAmount    int32            `json:"target_amount"`
+	CollectedAmount int32            `json:"collected_amount"`
+	AdminAddress    string           `json:"admin_address"`
+	Contributors    map[string]int32 `json:"contributors"`
+}
+
 type JoinEventByCodeRequest struct {
 	JoinCode string `json:"join_code"`
 	Role     string `json:"role"`

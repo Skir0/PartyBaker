@@ -2,6 +2,7 @@ package repository
 
 import (
 	"PartyBaker/internal/db"
+	"PartyBaker/internal/utils"
 	"context"
 	"fmt"
 	"log"
@@ -35,12 +36,32 @@ func (r *Repository) CreateGift(ctx context.Context, params db.CreateGiftParams)
 }
 
 func (r *Repository) GetAllActiveGiftsAddresses(ctx context.Context) ([]pgtype.Text, error) {
-	slice, err := r.query.GetAllActiveGiftsAddresses(ctx)
-
+	rows, err := r.db.Query(ctx, `
+		select contract_address
+		from gifts
+		where contract_address is not null
+		  and contract_address <> ''
+		  and status in ('active', 'selected')
+	`)
 	if err != nil {
 		return nil, err
 	}
-	return slice, nil
+	defer rows.Close()
+
+	var addresses []pgtype.Text
+	for rows.Next() {
+		var addr pgtype.Text
+		if err := rows.Scan(&addr); err != nil {
+			return nil, err
+		}
+		addresses = append(addresses, addr)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return addresses, nil
 }
 
 func (r *Repository) GetGifts(ctx context.Context) ([]db.Gift, error) {
@@ -81,6 +102,41 @@ func (r *Repository) UpdateGift(ctx context.Context, params db.UpdateGiftParams)
 	if err != nil {
 		return fmt.Errorf("database error: %w", err)
 
+	}
+	return nil
+}
+
+func (r *Repository) GetGiftForDeployment(ctx context.Context, giftID int32, adminID int32) (db.GetGiftForDeploymentRow, error) {
+	gift, err := r.query.GetGiftForDeployment(ctx, db.GetGiftForDeploymentParams{
+		ID:      giftID,
+		AdminID: adminID,
+	})
+	if err != nil {
+		return db.GetGiftForDeploymentRow{}, fmt.Errorf("database error: %w", err)
+	}
+
+	return gift, nil
+}
+
+func (r *Repository) GetUserWalletAddress(ctx context.Context, userID int64) (string, error) {
+	walletAddress, err := r.query.GetUserWalletAddress(ctx, userID)
+	if err != nil {
+		return "", err
+	}
+	if !walletAddress.Valid || walletAddress.String == "" {
+		return "", fmt.Errorf("wallet address is empty for user %d", userID)
+	}
+	return walletAddress.String, nil
+}
+
+func (r *Repository) SaveGiftDeployment(ctx context.Context, giftID int32, adminID int32, contractAddress string) error {
+	err := r.query.SaveGiftForDeployment(ctx, db.SaveGiftForDeploymentParams{
+		ContractAddress: utils.ParseJsonString(contractAddress),
+		ID:              giftID,
+		AdminID:         adminID,
+	})
+	if err != nil {
+		return fmt.Errorf("database error: %w", err)
 	}
 	return nil
 }

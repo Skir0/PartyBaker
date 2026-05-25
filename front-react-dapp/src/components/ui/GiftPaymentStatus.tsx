@@ -1,30 +1,24 @@
+import { useState } from 'react';
 import { MaterialIcon } from './MaterialIcon.tsx';
 import { useGiftPaymentStatus } from '../../hooks/useGiftPaymentStatus.ts';
+import { deployGiftContract } from '../../api/giftService.ts';
+import { TonPayButton } from '@ton-pay/ui-react';
 
 type ParticipantStatus = 'paid' | 'pending';
 type ParticipantAccent = 'secondary' | 'tertiary' | 'neutral' | 'primary';
 
-export interface EventContributionParticipant {
-    id: number | string;
-    name: string;
-    amount: number;
-    status: ParticipantStatus;
-    accent?: ParticipantAccent;
-}
-
 interface GiftPaymentProps {
+    giftId: number;
+    contractAddress?: string;
     giftTitle: string;
     collectedAmount: number;
     targetAmount: number;
-    participantsCount: number;
     payAmount: number;
-    participants: EventContributionParticipant[];
     eventId: number;
     recipientId: number;
     onBack: () => void;
     onClose?: () => void;
     onPay: () => void;
-    onViewAllParticipants?: () => void;
 }
 
 const accentClassNames: Record<ParticipantAccent, string> = {
@@ -35,7 +29,7 @@ const accentClassNames: Record<ParticipantAccent, string> = {
 };
 
 function formatAmount(amount: number): string {
-    console.log("amount", amount)
+    console.log('amount', amount);
     return String(amount);
 }
 
@@ -49,22 +43,46 @@ function getInitials(name: string): string {
 }
 
 export function GiftPaymentStatus({
-    giftTitle,
-    collectedAmount,
-    targetAmount,
-    participantsCount,
-    participants,
-    eventId,
-    recipientId,
-    onBack,
-    onClose,
-    onPay,
-    onViewAllParticipants
-}: GiftPaymentProps) {
+                                      giftId,
+                                      contractAddress,
+                                      giftTitle,
+                                      collectedAmount,
+                                      targetAmount,
+                                      eventId,
+                                      recipientId,
+                                      onBack,
+                                      onClose,
+                                      onPay
+                                  }: GiftPaymentProps) {
+    const [isDeploying, setIsDeploying] = useState(false);
+    const [deployError, setDeployError] = useState<string | null>(null);
+    const [deployedAddress, setDeployedAddress] = useState(contractAddress ?? '');
 
     const { visiblePayers, hasMore, loadMore, isLoading, allPayers } = useGiftPaymentStatus(eventId, recipientId);
+    console.log('active recipient', recipientId);
+    console.log('visible payers', visiblePayers);
     const progress = targetAmount > 0 ? Math.min((collectedAmount / targetAmount) * 100, 100) : 0;
     const roundedProgress = Math.round(progress);
+    const hasDeployment = deployedAddress.length > 0;
+
+    const handleDeploy = async () => {
+        if (!giftId || isDeploying || hasDeployment) {
+            return;
+        }
+
+        setIsDeploying(true);
+        setDeployError(null);
+
+        try {
+            const response = await deployGiftContract(giftId);
+            setDeployedAddress(response.address);
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Failed to deploy contract';
+            setDeployError(message);
+        } finally {
+            setIsDeploying(false);
+        }
+    };
 
     return (
         <div className="min-h-screen bg-background text-on-background">
@@ -76,22 +94,25 @@ export function GiftPaymentStatus({
                     <div className="w-full rounded-xl border border-outline-variant/10 bg-surface-container-low p-5">
                         <div className="mb-3 flex items-end justify-between">
                             <div className="flex flex-col">
-                                <span className="mb-1 text-xs font-semibold uppercase tracking-wider text-on-surface-variant">
+                                <span
+                                    className="mb-1 text-xs font-semibold uppercase tracking-wider text-on-surface-variant">
                                     Collected
                                 </span>
                                 <div className="flex items-baseline gap-1">
-                                    <span className="text-2xl font-bold text-primary">{formatAmount(collectedAmount)}</span>
-                                    <span className="text-sm font-medium text-primary">{"usd"}</span>
+                                    <span
+                                        className="text-2xl font-bold text-primary">{formatAmount(collectedAmount)}</span>
+                                    <span className="text-sm font-medium text-primary">{'usd'}</span>
                                 </div>
                             </div>
 
                             <div className="text-right">
-                                <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-on-surface-variant">
+                                <span
+                                    className="mb-1 block text-xs font-semibold uppercase tracking-wider text-on-surface-variant">
                                     Goal
                                 </span>
                                 <div className="flex items-baseline justify-end gap-1 text-on-surface-variant">
                                     <span className="text-2xl font-bold">{formatAmount(targetAmount)}</span>
-                                    <span className="text-xs font-medium ">{"usd"}</span>
+                                    <span className="text-xs font-medium ">{'usd'}</span>
                                 </div>
                             </div>
                         </div>
@@ -100,7 +121,8 @@ export function GiftPaymentStatus({
                             <div className="h-full rounded-full bg-primary" style={{ width: `${progress}%` }} />
                         </div>
 
-                        <div className="mt-4 flex items-center justify-between text-xs font-medium text-on-surface-variant">
+                        <div
+                            className="mt-4 flex items-center justify-between text-xs font-medium text-on-surface-variant">
                             <span>{roundedProgress}% Funded</span>
                             <span className="flex items-center gap-1">
                                 <MaterialIcon icon="group" size="text-xs" />
@@ -115,9 +137,9 @@ export function GiftPaymentStatus({
                         Contributors
                     </h3>
 
-                    <div className="overflow-hidden rounded-xl border border-outline-variant/10 bg-surface-container-low">
+                    <div
+                        className="overflow-hidden rounded-xl border border-outline-variant/10 bg-surface-container-low">
                         {visiblePayers?.map((payer, index) => {
-                            let isPaid = payer.is_paid;
                             return (
                                 <div
                                     key={payer.id}
@@ -133,21 +155,25 @@ export function GiftPaymentStatus({
                                         </div>
 
                                         <div className="flex flex-col">
-                                            <span className="text-sm font-semibold text-on-surface">{payer.first_name}</span>
+                                            <span
+                                                className="text-sm font-semibold text-on-surface">{payer.first_name}</span>
                                         </div>
                                     </div>
 
                                     <div
                                         className={`flex items-center gap-1 ${
-                                            isPaid ? 'text-primary' : 'text-on-surface-variant/30'
+                                            payer.is_paid ? 'text-primary' : 'text-on-surface-variant/30'
                                         }`}
                                     >
                                         <span className="text-xs font-bold uppercase">
-                                            {isPaid ? 'Paid' : 'Pending'}
+                                            {payer.is_paid ? 'Paid' : 'Pending'}
+                                        </span>
+                                        <span className="text-xs font-bold uppercase">
+                                            {payer.is_paid ? payer.amount + ' usd' : ''}
                                         </span>
                                         <MaterialIcon
-                                            icon={isPaid ? 'check_circle' : 'radio_button_unchecked'}
-                                            fill={isPaid}
+                                            icon={payer.is_paid ? 'check_circle' : 'radio_button_unchecked'}
+                                            fill={payer.is_paid}
                                             size="text-sm"
                                         />
                                     </div>
@@ -167,30 +193,34 @@ export function GiftPaymentStatus({
                         </button>
                     )}
 
-                    {onViewAllParticipants && (
-                        <button
-                            type="button"
-                            onClick={onViewAllParticipants}
-                            className="mt-4 w-full rounded-lg py-2 text-sm font-bold text-primary transition-all active:bg-primary/10"
-                        >
-                            View all {participantsCount} participants
-                        </button>
-                    )}
                 </section>
 
                 <div className="fixed bottom-0 left-0 right-0 w-full mx-auto w-full max-w-lg">
                     <button
                         type="button"
-                        onClick={onPay}
-                        className="flex h-14 w-full items-center justify-center gap-3 rounded-xl bg-[#005f9e] font-bold text-white shadow-lg shadow-primary/20 transition-all active:scale-[0.98]"
+                        onClick={handleDeploy}
+                        disabled={!giftId || isDeploying || hasDeployment}
+                        className="flex h-14 w-full items-center justify-center gap-3 rounded-xl bg-[#005f9e] font-bold text-white shadow-lg shadow-primary/20 transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
                     >
                         <span>
-                            Pay {"usd"}
+                            {hasDeployment ? 'Contract deployed' : isDeploying ? 'Deploying...' : 'Start collecting'}
                         </span>
                         <div className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20">
                             <MaterialIcon icon="payments" fill size="text-sm" />
                         </div>
                     </button>
+
+                    {deployError && (
+                        <p className="mt-3 text-center text-[11px] font-medium text-error">
+                            {deployError}
+                        </p>
+                    )}
+
+                    {hasDeployment && (
+                        <p className="mt-3 text-center text-[11px] font-medium text-on-surface-variant">
+                            {deployedAddress}
+                        </p>
+                    )}
 
                     <p className="mt-3 text-center text-[11px] font-medium text-on-surface-variant">
                         Secured by Telegram Payment API
@@ -198,7 +228,8 @@ export function GiftPaymentStatus({
                 </div>
             </main>
 
-            <footer className="safe-bottom fixed bottom-0 left-0 right-0 z-50 border-t border-outline-variant/10 bg-background/90 p-4 backdrop-blur-lg">
+            <footer
+                className="safe-bottom fixed bottom-0 left-0 right-0 z-50 border-t border-outline-variant/10 bg-background/90 p-4 backdrop-blur-lg">
 
             </footer>
         </div>

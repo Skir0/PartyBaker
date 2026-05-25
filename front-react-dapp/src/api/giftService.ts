@@ -38,3 +38,13 @@ export const addGiftLike = async (giftId: number): Promise<void> => {
     await apiClient.post(`/api/gifts/${giftId}/like`);
 }
 
+
+export interface DeployGiftResponse {
+    address: string;
+    status: string;
+}
+
+export const deployGiftContract = async (giftId: number): Promise<DeployGiftResponse> => {
+    const response = await apiClient.post(`/api/gifts/${giftId}/deploy`, {});
+    return response.data;
+}

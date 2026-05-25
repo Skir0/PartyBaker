@@ -8,14 +8,14 @@ import {
     Dictionary,
     type Sender,
     SendMode,
-
 } from '@ton/core';
-// @ts-ignore
+
 export enum GiftStatus {
     ACTIVE = 0,
     PAID = 1,
     CANCELLED = 2,
 }
+
 export const Opcodes = {
     ask_to_transfer: 0x0f8a7ea5,
     transfer_notification: 0x7362d09c,
@@ -32,6 +32,7 @@ export const ErrorCodes = {
     contributor_not_exist: 35,
     not_from_admin: 1011,
 };
+
 export function jettonWalletConfigToCell(ownerAddress: Address, minterAddress: Address, walletCode: Cell) {
     return beginCell()
         .storeCoins(0)
@@ -40,20 +41,19 @@ export function jettonWalletConfigToCell(ownerAddress: Address, minterAddress: A
         .storeRef(walletCode)
         .endCell();
 }
+
 export function calDeployedJettonWallet(ownerAddress: Address, minterAddress: Address, walletCode: Cell) {
     const data = jettonWalletConfigToCell(ownerAddress, minterAddress, walletCode);
     return {
         code: walletCode,
-        data: data
-    }
+        data,
+    };
 }
 
 export function calcAddressOfJettonWallet(ownerAddress: Address, minterAddress: Address, walletCode: Cell) {
     const init = calDeployedJettonWallet(ownerAddress, minterAddress, walletCode);
-    console.log(contractAddress(0, init).equals(Address.parse("kQDPI6jHrBVjh_y01BSXgDF5bHPYworVuyk1A3pedFgwfszE")));
     return contractAddress(0, init);
 }
-
 
 function parseCellToMap(contributorsCell: Cell | null): Map<Address, bigint> {
     if (!contributorsCell) {
@@ -75,6 +75,7 @@ export type GiftWalletConfig = {
     acceptedMinterAddress: Address;
     code: Cell;
 };
+
 export function giftWalletConfigToCell(config: GiftWalletConfig) {
     return beginCell()
         .storeUint(0, 4)
@@ -87,18 +88,16 @@ export function giftWalletConfigToCell(config: GiftWalletConfig) {
         .endCell();
 }
 
-
 export class GiftWallet implements Contract {
     constructor(
         readonly address: Address,
         readonly init?: { code: Cell; data: Cell },
     ) {}
 
-    // use with existing address
     static createFromAddress(address: Address) {
         return new GiftWallet(address);
     }
-    // deploy
+
     static createFromConfig(config: GiftWalletConfig, code: Cell, workchain = 0) {
         const data = giftWalletConfigToCell(config);
         const init = { data, code };
@@ -141,10 +140,12 @@ export class GiftWallet implements Contract {
             code: stack.readCell(),
         };
     }
+
     async getStatus(provider: ContractProvider) {
         const result = await provider.get('get_status', []);
         return result.stack.readNumber() as GiftStatus;
     }
+
     async getCollectedAmount(provider: ContractProvider) {
         const result = await provider.get('get_collected_amount', []);
         return result.stack.readBigNumber();
@@ -192,6 +193,7 @@ export class GiftWallet implements Contract {
                 .endCell(),
         });
     }
+
     async sendChangeTargetAmount(
         provider: ContractProvider,
         via: Sender,
@@ -211,6 +213,7 @@ export class GiftWallet implements Contract {
                 .endCell(),
         });
     }
+
     async sendReturnAmount(
         provider: ContractProvider,
         via: Sender,

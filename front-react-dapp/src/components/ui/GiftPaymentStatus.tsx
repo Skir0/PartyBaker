@@ -1,32 +1,26 @@
-import { useState } from 'react';
 import { MaterialIcon } from './MaterialIcon.tsx';
 import { useGiftPaymentStatus } from '../../hooks/useGiftPaymentStatus.ts';
-import { deployGiftContract } from '../../api/giftService.ts';
-import { TonPayButton } from '@ton-pay/ui-react';
+
+import { useSendTransaction } from '../../hooks/useSendTransaction.ts';
 
 type ParticipantStatus = 'paid' | 'pending';
 type ParticipantAccent = 'secondary' | 'tertiary' | 'neutral' | 'primary';
 
 interface GiftPaymentProps {
     giftId: number;
-    contractAddress?: string;
+    contractAddress: string;
     giftTitle: string;
     collectedAmount: number;
     targetAmount: number;
     payAmount: number;
     eventId: number;
     recipientId: number;
+    recipientAddress: string;
     onBack: () => void;
     onClose?: () => void;
     onPay: () => void;
 }
 
-const accentClassNames: Record<ParticipantAccent, string> = {
-    secondary: 'bg-secondary-container text-on-secondary-container',
-    tertiary: 'bg-tertiary-fixed-dim text-on-tertiary-fixed-variant',
-    neutral: 'bg-surface-container-high text-on-surface-variant',
-    primary: 'bg-primary-fixed-dim text-on-primary-fixed-variant'
-};
 
 function formatAmount(amount: number): string {
     console.log('amount', amount);
@@ -50,39 +44,26 @@ export function GiftPaymentStatus({
                                       targetAmount,
                                       eventId,
                                       recipientId,
+                                      recipientAddress,
                                       onBack,
                                       onClose,
                                       onPay
                                   }: GiftPaymentProps) {
-    const [isDeploying, setIsDeploying] = useState(false);
-    const [deployError, setDeployError] = useState<string | null>(null);
-    const [deployedAddress, setDeployedAddress] = useState(contractAddress ?? '');
 
-    const { visiblePayers, hasMore, loadMore, isLoading, allPayers } = useGiftPaymentStatus(eventId, recipientId);
+
+    const { visiblePayers, hasMore, loadMore, isLoading, allPayers, deployError,
+        isDeploying, hasDeployment, deployedAddress } = useGiftPaymentStatus(eventId, recipientId, giftId, contractAddress);
+
+    const amountToPay = Math.ceil(targetAmount / allPayers?.length!);
+    const {payError, payConfirmation, handlePay} = useSendTransaction(contractAddress, amountToPay);
+
     console.log('active recipient', recipientId);
     console.log('visible payers', visiblePayers);
     const progress = targetAmount > 0 ? Math.min((collectedAmount / targetAmount) * 100, 100) : 0;
     const roundedProgress = Math.round(progress);
-    const hasDeployment = deployedAddress.length > 0;
 
-    const handleDeploy = async () => {
-        if (!giftId || isDeploying || hasDeployment) {
-            return;
-        }
 
-        setIsDeploying(true);
-        setDeployError(null);
 
-        try {
-            const response = await deployGiftContract(giftId);
-            setDeployedAddress(response.address);
-        } catch (error) {
-            const message = error instanceof Error ? error.message : 'Failed to deploy contract';
-            setDeployError(message);
-        } finally {
-            setIsDeploying(false);
-        }
-    };
 
     return (
         <div className="min-h-screen bg-background text-on-background">
@@ -198,21 +179,22 @@ export function GiftPaymentStatus({
                 <div className="fixed bottom-0 left-0 right-0 w-full mx-auto w-full max-w-lg">
                     <button
                         type="button"
-                        onClick={handleDeploy}
+                        onClick={handlePay}
                         disabled={!giftId || isDeploying || hasDeployment}
                         className="flex h-14 w-full items-center justify-center gap-3 rounded-xl bg-[#005f9e] font-bold text-white shadow-lg shadow-primary/20 transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
                     >
                         <span>
-                            {hasDeployment ? 'Contract deployed' : isDeploying ? 'Deploying...' : 'Start collecting'}
+                            Pay {amountToPay}
                         </span>
+
                         <div className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20">
                             <MaterialIcon icon="payments" fill size="text-sm" />
                         </div>
                     </button>
 
-                    {deployError && (
+                    {payError && (
                         <p className="mt-3 text-center text-[11px] font-medium text-error">
-                            {deployError}
+                            {payError}
                         </p>
                     )}
 

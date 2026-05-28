@@ -28,7 +28,7 @@ func (msg *AskToTransfer) Info() {
 }
 
 type TransferNotification struct {
-	_              tlb.Magic        `tlb:"#7362d09c"`
+	// _              tlb.Magic        `tlb:"#7362d09c"`
 	QueryId        uint64           `tlb:"## 64"`
 	Amount         tlb.Coins        `tlb:"."`
 	SenderAddress  *address.Address `tlb:"addr"`

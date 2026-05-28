@@ -11,6 +11,7 @@ export interface RecipientResponse {
     id: number;
     first_name: string;
     last_name: string;
+    wallet_address: string;
 }
 
 export interface PayerResponse {

@@ -156,6 +156,7 @@ export function EventGiftPollPage() {
                         giftTitle={selectedGifts[activeRecipient.id]?.name}
                         eventId={event?.id!}
                         recipientId={activeRecipient.id}
+                        recipientAddress={activeRecipient.wallet_address}
                         collectedAmount={selectedGifts[activeRecipient.id]?.collected_amount}
                         targetAmount={selectedGifts[activeRecipient.id]?.target_amount!}
                         payAmount={selectedGifts[activeRecipient.id]?.target_amount! / event?.participants_amount!}

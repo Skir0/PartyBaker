@@ -1,13 +1,20 @@
 import { useEffect, useState } from 'react';
 import type { PayerResponse } from '../types/event-domain.types.ts';
 import { getPayersInfoForRecipient } from '../api/participantsService.ts';
+import { deployGiftContract } from '../api/giftService.ts';
 
-export function useGiftPaymentStatus(eventId: number, recipientId: number) {
+export function useGiftPaymentStatus(eventId: number, recipientId: number, giftId: number, contractAddress: string) {
     const [allPayers, setAllPayers] = useState<PayerResponse[]>();
     const [visiblePayers, setVisiblePayers] = useState<PayerResponse[]>([]);
     const [loadedCount, setLoadedCount] = useState(0);
     const [hasMore, setHasMore] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+
+    const [isDeploying, setIsDeploying] = useState(false);
+    const [deployError, setDeployError] = useState<string | null>(null);
+    const [deployedAddress, setDeployedAddress] = useState(contractAddress ?? '');
+    const hasDeployment = deployedAddress.length > 0;
+
     const pageSize = 5;
 
     useEffect(() => {
@@ -40,11 +47,37 @@ export function useGiftPaymentStatus(eventId: number, recipientId: number) {
         setIsLoading(false);
     };
 
+    const handleDeploy = async () => {
+        if (!giftId || isDeploying || hasDeployment) {
+            return;
+        }
+
+        setIsDeploying(true);
+        setDeployError(null);
+
+        try {
+            const response = await deployGiftContract(giftId);
+            setDeployedAddress(response.address);
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Failed to deploy contract';
+            setDeployError(message);
+        } finally {
+            setIsDeploying(false);
+        }
+    };
+
     return {
         visiblePayers,
         allPayers,
         hasMore,
         loadMore,
-        isLoading
+        isLoading,
+        deployError,
+        deployedAddress,
+        isDeploying,
+        hasDeployment,
+        handleDeploy
     };
+
+
 }

@@ -102,12 +102,12 @@ where contract_address = $2;
 
 -- name: DecreaseCollectedAmount :exec
 update Gifts
-set collected_amount = collected_amount - $1
+set collected_amount = (collected_amount - $1)
 where contract_address = $2;
 
 -- name: IncreaseCollectedAmount :exec
 update Gifts
-set collected_amount = collected_amount - $1
+set collected_amount = (collected_amount + $1)
 where contract_address = $2;
 
 
@@ -122,6 +122,25 @@ where participant_gift.participant_id = participants.id
   and users.wallet_address = $2;
 
 -- name: RecordTransfer :exec
+update participant_gift
+set is_paid = true,
+    amount = $3,
+    transaction_hash = $4
+
+where gift_id = (
+    select id from gifts
+    where contract_address = $1
+    limit 1
+)
+  and participant_id = (
+    select participants.id from participants
+                                    join users on participants.user_id = users.id
+    where users.wallet_address = $2
+    limit 1
+
+);
+
+-- name: CreateTransfer :exec
 insert into participant_gift (participant_id, gift_id, amount, transaction_hash, is_paid)
 values ((select participants.id
          from participants
@@ -160,8 +179,8 @@ where id = $1 and admin_id = $2;
 delete from gifts
 where id = $1 and admin_id = $2;
 
--- name: GetGiftRecipientsOfCurrentEvent :many
-select p.id, u.first_name, u.last_name
+-- name: GetRecipientsOfCurrentEvent :many
+select p.id, u.first_name, u.last_name, u.wallet_address
 from participants p
          join users u on u.id = p.user_id
 where p.event_id = $1 and p.user_id != $2

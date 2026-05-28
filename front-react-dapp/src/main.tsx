@@ -8,7 +8,7 @@ import { AuthProvider } from './contexts/AuthContext.tsx';
 
 WebApp.ready();
 
-const manifestUrl = 'https://tonconnect-sdk-demo-dapp.vercel.app/tonconnect-manifest.json';
+export const manifestUrl = 'https://tonconnect-sdk-demo-dapp.vercel.app/tonconnect-manifest.json';
 
 
 

@@ -1,11 +1,15 @@
 package responses
 
-import "PartyBaker/internal/db"
+import (
+	"PartyBaker/internal/db"
+	"fmt"
+)
 
 type RecipientResponse struct {
-	Id        int32  `json:"id"`
-	FirstName string `json:"first_name"`
-	LastName  string `json:"last_name"`
+	Id            int32  `json:"id"`
+	FirstName     string `json:"first_name"`
+	LastName      string `json:"last_name"`
+	WalletAddress string `json:"wallet_address"`
 }
 
 type PayerResponse struct {
@@ -16,13 +20,15 @@ type PayerResponse struct {
 	Amount    int32  `json:"amount"`
 }
 
-func ConvertRecipientsToResponses(recipients []db.GetGiftRecipientsOfCurrentEventRow) []RecipientResponse {
+func ConvertRecipientsToResponses(recipients []db.GetRecipientsOfCurrentEventRow) []RecipientResponse {
 	recipientResponses := make([]RecipientResponse, len(recipients))
 	for i, recipient := range recipients {
+		fmt.Println("addr", recipient.WalletAddress.String)
 		recipientResponses[i] = RecipientResponse{
-			Id:        recipient.ID,
-			FirstName: recipient.FirstName.String,
-			LastName:  recipient.LastName.String,
+			Id:            recipient.ID,
+			FirstName:     recipient.FirstName.String,
+			LastName:      recipient.LastName.String,
+			WalletAddress: recipient.WalletAddress.String,
 		}
 	}
 	return recipientResponses

@@ -168,6 +168,9 @@ func (r *Repository) FinalizeGiftStatusesOfEvent(ctx context.Context, eventId in
 	}
 
 	selectedGifts, err := qtx.GetSelectedGiftsOfEvent(ctx, eventId)
+	for _, gift := range selectedGifts {
+		fmt.Println(gift.ContractAddress)
+	}
 	if err != nil {
 		return []db.Gift{}, fmt.Errorf("error of getting all selected gifts of event : %w", err)
 	}

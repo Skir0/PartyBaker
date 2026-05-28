@@ -8,7 +8,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-func (r *Repository) ReturnAmount(ctx context.Context, giftContractAddress pgtype.Text,
+func (r *Repository) ReturnAmount(ctx context.Context, contractAddress pgtype.Text,
 	userWalletAddress pgtype.Text, amountToReturn pgtype.Int8) error {
 
 	tx, err := r.db.Begin(ctx)
@@ -19,14 +19,14 @@ func (r *Repository) ReturnAmount(ctx context.Context, giftContractAddress pgtyp
 
 	err = r.query.DecreaseCollectedAmount(ctx, db.DecreaseCollectedAmountParams{
 		CollectedAmount: amountToReturn,
-		ContractAddress: giftContractAddress,
+		ContractAddress: contractAddress,
 	})
 	if err != nil {
 		return fmt.Errorf("error decrease collected amount in db: %w", err)
 	}
 
 	err = r.query.DeleteParticipantGift(ctx, db.DeleteParticipantGiftParams{
-		ContractAddress: giftContractAddress,
+		ContractAddress: contractAddress,
 		WalletAddress:   userWalletAddress,
 	})
 	if err != nil {
@@ -48,7 +48,8 @@ func (r *Repository) ProcessTransfer(ctx context.Context, contractAddress pgtype
 
 	defer tx.Rollback(ctx)
 
-	// maybe create paticipant or gift
+	fmt.Println("user address", userWallerAddress)
+	fmt.Println("contract address", contractAddress)
 
 	err = r.query.RecordTransfer(ctx, db.RecordTransferParams{
 		ContractAddress: contractAddress,
@@ -57,13 +58,16 @@ func (r *Repository) ProcessTransfer(ctx context.Context, contractAddress pgtype
 		TransactionHash: txHash,
 	})
 	if err != nil {
-		return err
+		return fmt.Errorf("error record transfer in db: %w", err)
 	}
 
 	err = r.query.IncreaseCollectedAmount(ctx, db.IncreaseCollectedAmountParams{
 		CollectedAmount: transferAmount,
 		ContractAddress: contractAddress,
 	})
+	if err != nil {
+		return fmt.Errorf("error increase collected amount in db: %w", err)
+	}
 
 	tx.Commit(ctx)
 	return nil

@@ -50,7 +50,6 @@ export function calDeployedJettonWallet(ownerAddress: Address, minterAddress: Ad
 
 export function calcAddressOfJettonWallet(ownerAddress: Address, minterAddress: Address, walletCode: Cell) {
     const init = calDeployedJettonWallet(ownerAddress, minterAddress, walletCode);
-    console.log(contractAddress(0, init).equals(Address.parse("kQDPI6jHrBVjh_y01BSXgDF5bHPYworVuyk1A3pedFgwfszE")));
     return contractAddress(0, init);
 }
 

@@ -6,11 +6,12 @@ import (
 	"fmt"
 )
 
-func (r *Repository) GetRecipientsOfEvent(ctx context.Context, eventID int32, userId int32) ([]db.GetGiftRecipientsOfCurrentEventRow, error) {
-	participants, err := r.query.GetGiftRecipientsOfCurrentEvent(ctx, db.GetGiftRecipientsOfCurrentEventParams{
+func (r *Repository) GetRecipientsOfEvent(ctx context.Context, eventID int32, userId int32) ([]db.GetRecipientsOfCurrentEventRow, error) {
+	participants, err := r.query.GetRecipientsOfCurrentEvent(ctx, db.GetRecipientsOfCurrentEventParams{
 		EventID: eventID,
 		UserID:  userId,
 	})
+
 	if err != nil {
 		return nil, err
 	}

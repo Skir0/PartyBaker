@@ -122,23 +122,26 @@ where participant_gift.participant_id = participants.id
   and users.wallet_address = $2;
 
 -- name: RecordTransfer :exec
+with ev_id as (select event_id
+               from gifts
+               where contract_address = $1
+               limit 1)
 update participant_gift
-set is_paid = true,
-    amount = $3,
+set is_paid          = true,
+    amount           = $3,
     transaction_hash = $4
-
-where gift_id = (
-    select id from gifts
-    where contract_address = $1
-    limit 1
-)
-  and participant_id = (
-    select participants.id from participants
-                                    join users on participants.user_id = users.id
-    where users.wallet_address = $2
-    limit 1
-
-);
+where is_paid = false
+  and gift_id = (select id
+                 from gifts
+                 where gifts.contract_address = $1
+                 limit 1)
+  and participant_id = (select participants.id
+                        from participants
+                                 join users on participants.user_id = users.id
+                        where users.wallet_address = $2
+                          and participants.event_id = (select event_id from ev_id)
+                        limit 1)
+;
 
 -- name: CreateTransfer :exec
 insert into participant_gift (participant_id, gift_id, amount, transaction_hash, is_paid)

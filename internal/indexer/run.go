@@ -128,7 +128,7 @@ func (worker *Worker) Run(ctx context.Context) {
 					err = worker.processTransaction(tx, ctx,
 						// maybe delete parameter
 						pgtype.Text{
-							String: addr.Testnet(true).String(),
+							String: addr.Bounce(true).Testnet(true).String(),
 							Valid:  true,
 						})
 

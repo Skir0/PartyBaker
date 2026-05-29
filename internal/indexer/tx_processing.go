@@ -2,6 +2,7 @@ package indexer
 
 import (
 	"PartyBaker/internal/blockchain"
+	"PartyBaker/internal/utils"
 	"context"
 	"fmt"
 	"log"
@@ -12,15 +13,13 @@ import (
 
 func (worker *Worker) processTransaction(transaction *tlb.Transaction, ctx context.Context, contractAddress pgtype.Text) error {
 
-	fmt.Println("Processing transaction")
+	fmt.Println("Processing transaction:", contractAddress)
 	if transaction.IO.In == nil ||
 		transaction.IO.In.MsgType != tlb.MsgTypeInternal {
 		return fmt.Errorf("failed type of internal message")
 	}
 	inMsg := transaction.IO.In.AsInternal()
 	body := inMsg.Body.BeginParse()
-
-	fmt.Println("body", body)
 
 	op, err := body.LoadUInt(32)
 	if err != nil {
@@ -36,12 +35,12 @@ func (worker *Worker) processTransaction(transaction *tlb.Transaction, ctx conte
 		}
 
 		fmt.Printf("Получен вклад: %s от %s\n", transferNotification.Amount.Nano().String(),
-			transferNotification.SenderAddress.String())
+			transferNotification.SenderAddress.Bounce(true).Testnet(true).String())
 
-		userWalletAddress := inMsg.SrcAddr
+		// userWalletAddress := inMsg.SrcAddr
 
 		err := worker.repo.ProcessTransfer(ctx, contractAddress,
-			parseBytesToText(userWalletAddress.Data()),
+			utils.ParseJsonString(transferNotification.SenderAddress.Bounce(true).Testnet(true).String()),
 			parseCoinsToInt8(transferNotification.Amount.Nano()),
 			parseBytesToText(transaction.Hash))
 		if err != nil {

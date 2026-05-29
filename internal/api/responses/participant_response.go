@@ -47,3 +47,14 @@ func ConvertPayersInfoToResponses(payers []db.GetPayersInfoForRecipientRow) []Pa
 	}
 	return recipientResponses
 }
+
+func ConvertPayerInfoToResponse(payer db.GetCurrentPayerInfoRow) PayerResponse {
+	payerResponse := PayerResponse{
+		Id:        payer.ID,
+		FirstName: payer.FirstName.String,
+		LastName:  payer.LastName.String,
+		IsPaid:    payer.IsPaid.Bool,
+		Amount:    int32(payer.Amount.Int64),
+	}
+	return payerResponse
+}

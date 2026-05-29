@@ -151,7 +151,7 @@ export function EventGiftPollPage() {
                 )}
                 {isDeadline && (
                     <GiftPaymentStatus
-                        giftId={selectedGifts[activeRecipient.id]?.id}
+                        giftId={selectedGifts[activeRecipient.id]?.id!}
                         contractAddress={selectedGifts[activeRecipient.id]?.contract_address}
                         giftTitle={selectedGifts[activeRecipient.id]?.name}
                         eventId={event?.id!}

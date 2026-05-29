@@ -47,6 +47,7 @@ func (worker *Worker) processTransaction(transaction *tlb.Transaction, ctx conte
 			return err
 		}
 
+
 	case blockchain.CANCEL_GIFT:
 		err := worker.repo.CancelGift(ctx, contractAddress)
 		if err != nil {

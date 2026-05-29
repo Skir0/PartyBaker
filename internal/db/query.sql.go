@@ -517,6 +517,41 @@ func (q *Queries) GetAllParticipantsOfGift(ctx context.Context, giftID int32) ([
 	return items, nil
 }
 
+const getCurrentPayerInfo = `-- name: GetCurrentPayerInfo :one
+select p.id, u.first_name, u.last_name, pg.is_paid, pg.amount from participants p
+                                                                       join users u on p.user_id = u.id
+                                                                       join participant_gift pg on p.id = pg.participant_id
+                                                                       join gifts g on pg.gift_id = g.id
+where g.id = $1 and u.id = $2
+limit 1
+`
+
+type GetCurrentPayerInfoParams struct {
+	ID   int32
+	ID_2 int64
+}
+
+type GetCurrentPayerInfoRow struct {
+	ID        int32
+	FirstName pgtype.Text
+	LastName  pgtype.Text
+	IsPaid    pgtype.Bool
+	Amount    pgtype.Int8
+}
+
+func (q *Queries) GetCurrentPayerInfo(ctx context.Context, arg GetCurrentPayerInfoParams) (GetCurrentPayerInfoRow, error) {
+	row := q.db.QueryRow(ctx, getCurrentPayerInfo, arg.ID, arg.ID_2)
+	var i GetCurrentPayerInfoRow
+	err := row.Scan(
+		&i.ID,
+		&i.FirstName,
+		&i.LastName,
+		&i.IsPaid,
+		&i.Amount,
+	)
+	return i, err
+}
+
 const getEventIdByJoinCode = `-- name: GetEventIdByJoinCode :one
 select id from events
 where join_code = $1

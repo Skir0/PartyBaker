@@ -2,6 +2,8 @@ import { MaterialIcon } from './MaterialIcon.tsx';
 import { useGiftPaymentStatus } from '../../hooks/useGiftPaymentStatus.ts';
 
 import { useSendTransaction } from '../../hooks/useSendTransaction.ts';
+import { useAuth } from '../../contexts/AuthContext.tsx';
+import { useState } from 'react';
 
 type ParticipantStatus = 'paid' | 'pending';
 type ParticipantAccent = 'secondary' | 'tertiary' | 'neutral' | 'primary';
@@ -51,10 +53,11 @@ export function GiftPaymentStatus({
                                   }: GiftPaymentProps) {
 
 
-    const { visiblePayers, hasMore, loadMore, isLoading, allPayers, deployError,
+    const { visiblePayers, hasMore, loadMore, isLoading, allPayers, currentPayer, deployError,
         isDeploying, hasDeployment, deployedAddress } = useGiftPaymentStatus(eventId, recipientId, giftId, contractAddress);
 
     const amountToPay = Math.ceil(targetAmount / allPayers?.length!);
+    const hasCurrentUserPaid = currentPayer?.is_paid;
     const {payError, payConfirmation, handlePay} = useSendTransaction(contractAddress, amountToPay);
 
     console.log('active recipient', recipientId);
@@ -180,11 +183,14 @@ export function GiftPaymentStatus({
                     <button
                         type="button"
                         onClick={handlePay}
-                        disabled={!giftId || isDeploying || hasDeployment}
+                        disabled={!giftId || payConfirmation || hasCurrentUserPaid}
                         className="flex h-14 w-full items-center justify-center gap-3 rounded-xl bg-[#005f9e] font-bold text-white shadow-lg shadow-primary/20 transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
-                    >
+                    >{
+                        hasCurrentUserPaid
+                    }
+
                         <span>
-                            Pay {amountToPay}
+                            Pay {amountToPay} usd
                         </span>
 
                         <div className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20">
@@ -195,12 +201,6 @@ export function GiftPaymentStatus({
                     {payError && (
                         <p className="mt-3 text-center text-[11px] font-medium text-error">
                             {payError}
-                        </p>
-                    )}
-
-                    {hasDeployment && (
-                        <p className="mt-3 text-center text-[11px] font-medium text-on-surface-variant">
-                            {deployedAddress}
                         </p>
                     )}
 

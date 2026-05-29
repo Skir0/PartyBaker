@@ -276,6 +276,14 @@ select p.id, u.first_name, u.last_name, pg.is_paid, pg.amount from participants 
                                         join gifts g on pg.gift_id = g.id
 where p.event_id = $1 and role in ('contributor', 'participant') and p.id != $2 and g.recipient_id = $2;
 
+-- name: GetCurrentPayerInfo :one
+select p.id, u.first_name, u.last_name, pg.is_paid, pg.amount from participants p
+                                                                       join users u on p.user_id = u.id
+                                                                       join participant_gift pg on p.id = pg.participant_id
+                                                                       join gifts g on pg.gift_id = g.id
+where g.id = $1 and u.id = $2
+limit 1;
+
 -- name: GetGiftForDeployment :one
 select id, target_amount, status, contract_address,
        admin_id, collected_amount
@@ -297,3 +305,4 @@ update gifts
 set contract_address = $1
 where id = $2
   and admin_id = $3;
+

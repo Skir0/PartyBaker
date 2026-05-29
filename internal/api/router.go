@@ -26,6 +26,7 @@ func NewRouter(h *Handler) *chi.Mux {
 		// Работа с подарками
 		r.Route("/gifts", func(r chi.Router) {
 			r.Route("/{giftId}", func(r chi.Router) {
+				r.Get("/currentPayer", h.GetCurrentPayer)
 
 				// for test
 				// r.Post("/deploy", h.DeployGiftContract)
@@ -64,7 +65,10 @@ func NewRouter(h *Handler) *chi.Mux {
 					r.Get("/", h.GetRecipientsOfEvent)
 					r.Route("/{recipientId}", func(r chi.Router) {
 						r.Get("/gifts", h.GetGiftsInfoByRecipient)
-						r.Get("/payers", h.GetPayersInfoForRecipient)
+						// работа с плательщиками
+						r.Route("/payers", func(r chi.Router) {
+							r.Get("/", h.GetPayersInfoForRecipient)
+						})
 					})
 				})
 			})

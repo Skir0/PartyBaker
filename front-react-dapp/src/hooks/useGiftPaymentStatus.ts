@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { PayerResponse } from '../types/event-domain.types.ts';
-import { getPayersInfoForRecipient } from '../api/participantsService.ts';
+import { getCurrentPayer, getPayersInfoForRecipient } from '../api/participantsService.ts';
 import { deployGiftContract } from '../api/giftService.ts';
 
 export function useGiftPaymentStatus(eventId: number, recipientId: number, giftId: number, contractAddress: string) {
@@ -14,8 +14,20 @@ export function useGiftPaymentStatus(eventId: number, recipientId: number, giftI
     const [deployError, setDeployError] = useState<string | null>(null);
     const [deployedAddress, setDeployedAddress] = useState(contractAddress ?? '');
     const hasDeployment = deployedAddress.length > 0;
+    const [currentPayer, setCurrentPayer] = useState<PayerResponse>();
 
     const pageSize = 5;
+
+    useEffect(() => {
+        const loadCurrentPayer = async () => {
+            console.log("gift id", giftId)
+            const response = await getCurrentPayer(giftId) as PayerResponse;
+
+            console.log("current payer", currentPayer)
+            setCurrentPayer(response);
+        }
+        void loadCurrentPayer();
+    }, [giftId]);
 
     useEffect(() => {
         const loadPayers = async () => {
@@ -69,6 +81,7 @@ export function useGiftPaymentStatus(eventId: number, recipientId: number, giftI
     return {
         visiblePayers,
         allPayers,
+        currentPayer,
         hasMore,
         loadMore,
         isLoading,

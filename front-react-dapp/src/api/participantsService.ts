@@ -11,3 +11,10 @@ export const getPayersInfoForRecipient = async (eventId: number, recipientId: nu
     const response = await apiClient.get(`/api/events/${eventId}/recipients/${recipientId}/payers`);
     return response.data;
 }
+
+export const getCurrentPayer = async (giftId: number)=> {
+
+    const response = await apiClient.get(`/api/gifts/${giftId}/currentPayer`);
+    return response.data;
+
+}

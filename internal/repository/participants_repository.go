@@ -56,3 +56,15 @@ func (r *Repository) GetPayersInfoForRecipient(ctx context.Context, recipientID 
 	}
 	return payers, nil
 }
+
+func (r *Repository) GetCurrentPayer(ctx context.Context, giftID int32, userID int64) (db.GetCurrentPayerInfoRow, error) {
+	payer, err := r.query.GetCurrentPayerInfo(ctx, db.GetCurrentPayerInfoParams{
+		ID:   giftID,
+		ID_2: int64(userID),
+	})
+	if err != nil {
+		fmt.Println("repo err", err)
+		return db.GetCurrentPayerInfoRow{}, err
+	}
+	return payer, nil
+}

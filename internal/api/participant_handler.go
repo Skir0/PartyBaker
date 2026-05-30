@@ -69,6 +69,7 @@ func (h *Handler) GetCurrentPayer(writer http.ResponseWriter, request *http.Requ
 	giftParam := chi.URLParam(request, "giftId")
 	giftID, err := strconv.Atoi(giftParam)
 	if err != nil {
+		fmt.Println("invalid gift id")
 		http.Error(writer, "invalid gift id", http.StatusBadRequest)
 		return
 	}
@@ -76,12 +77,16 @@ func (h *Handler) GetCurrentPayer(writer http.ResponseWriter, request *http.Requ
 
 	fmt.Println("currentUserID:", currentUserID)
 	if !ok {
+		fmt.Println("unauthorized")
 		http.Error(writer, "unauthorized", http.StatusUnauthorized)
+		return
 	}
 
 	payer, err := h.repo.GetCurrentPayer(request.Context(), int32(giftID), currentUserID)
 	if err != nil {
+		fmt.Println("failed to load recipients", err.Error())
 		http.Error(writer, "failed to load current payer", http.StatusInternalServerError)
+		return
 	}
 
 	json.NewEncoder(writer).Encode(responses.ConvertPayerInfoToResponse(payer))

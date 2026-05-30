@@ -27,12 +27,12 @@ export function useGiftPaymentStatus(eventId: number, recipientId: number, giftI
             setCurrentPayer(response);
         }
         void loadCurrentPayer();
-    }, [giftId]);
+    }, [giftId, recipientId]);
 
     useEffect(() => {
         const loadPayers = async () => {
             const response = await getPayersInfoForRecipient(eventId, recipientId) as PayerResponse[];
-            console.log("response", response)
+            console.log("payers from front", response)
             setAllPayers(response);
             setVisiblePayers(response.slice(0, Math.min(pageSize, response.length)))
             setLoadedCount(Math.min(pageSize, response.length));

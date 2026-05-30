@@ -3,7 +3,7 @@ import { useGiftPaymentStatus } from '../../hooks/useGiftPaymentStatus.ts';
 
 import { useSendTransaction } from '../../hooks/useSendTransaction.ts';
 import { useAuth } from '../../contexts/AuthContext.tsx';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 type ParticipantStatus = 'paid' | 'pending';
 type ParticipantAccent = 'secondary' | 'tertiary' | 'neutral' | 'primary';
@@ -57,11 +57,11 @@ export function GiftPaymentStatus({
         isDeploying, hasDeployment, deployedAddress } = useGiftPaymentStatus(eventId, recipientId, giftId, contractAddress);
 
     const amountToPay = Math.ceil(targetAmount / allPayers?.length!);
-    const hasCurrentUserPaid = currentPayer?.is_paid;
+
     const {payError, payConfirmation, handlePay} = useSendTransaction(contractAddress, amountToPay);
 
     console.log('active recipient', recipientId);
-    console.log('visible payers', visiblePayers);
+    console.log('all payers', allPayers);
     const progress = targetAmount > 0 ? Math.min((collectedAmount / targetAmount) * 100, 100) : 0;
     const roundedProgress = Math.round(progress);
 
@@ -123,7 +123,9 @@ export function GiftPaymentStatus({
 
                     <div
                         className="overflow-hidden rounded-xl border border-outline-variant/10 bg-surface-container-low">
-                        {visiblePayers?.map((payer, index) => {
+                        {/*TODO with visible payers*/}
+                        {allPayers?.map((payer, index) => {
+                            console.log("visible mayers map", visiblePayers)
                             return (
                                 <div
                                     key={payer.id}
@@ -183,10 +185,10 @@ export function GiftPaymentStatus({
                     <button
                         type="button"
                         onClick={handlePay}
-                        disabled={!giftId || payConfirmation || hasCurrentUserPaid}
+                        disabled={!giftId || payConfirmation || currentPayer?.is_paid}
                         className="flex h-14 w-full items-center justify-center gap-3 rounded-xl bg-[#005f9e] font-bold text-white shadow-lg shadow-primary/20 transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
                     >{
-                        hasCurrentUserPaid
+                        currentPayer?.is_paid
                     }
 
                         <span>

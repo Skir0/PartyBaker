@@ -14,6 +14,7 @@ export const getPayersInfoForRecipient = async (eventId: number, recipientId: nu
 
 export const getCurrentPayer = async (giftId: number)=> {
 
+    console.log("inside payers service")
     const response = await apiClient.get(`/api/gifts/${giftId}/currentPayer`);
     return response.data;
 

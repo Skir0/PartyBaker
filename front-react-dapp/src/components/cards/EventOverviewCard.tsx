@@ -1,21 +1,38 @@
 import { MaterialIcon } from '../ui/MaterialIcon.tsx';
-import type { EventOverviewCardProps } from '../../types/event-ui.types.ts';
+import { EventStatus } from '../../types/event-ui.types.ts';
+import { useEventOverviewCard } from '../../hooks/useEventOverviewCard.ts';
+
+
+export interface EventOverviewCardProps {
+    eventId: number;
+    title: string;
+    participants: string;
+    imageUrl: string;
+    imageAlt: string;
+    statusClassName: string;
+    eventDate: string;
+    deadline: string;
+    deadlineClassName?: string;
+    isAdmin?: boolean;
+    onSettingsClick?: () => void;
+    onClick?: () => void;
+}
 
 export function EventOverviewCard({
                                       title,
                                       participants,
                                       imageUrl,
                                       imageAlt,
-                                      status,
                                       statusClassName,
                                       eventDate,
                                       deadline,
                                       deadlineClassName = 'text-on-surface-variant',
                                       isAdmin,
                                       onSettingsClick,
-                                      onClick,
+                                      onClick
                                   }: EventOverviewCardProps) {
 
+    const { status } = useEventOverviewCard(deadline);
 
     return (
         <div
@@ -50,10 +67,8 @@ export function EventOverviewCard({
                             </div>
                         </div>
                     </div>
-                    <span className={`rounded-full px-2 py-1 text-[11px] font-bold uppercase ${statusClassName}`}>
-                        {status}
-                    </span>
-                    {isAdmin && (
+
+                    <div className={isAdmin ? 'visible' : 'invisible'}>
                         <button
                             onClick={(e) => {
 
@@ -64,26 +79,39 @@ export function EventOverviewCard({
                         >
                             <MaterialIcon icon="settings" size="text-[18px]" />
                         </button>
-                    )}
+
+                    </div>
+
                 </div>
 
-                <div className="mt-1 grid grid-cols-2 gap-4">
-                    <div className="flex flex-col">
+                <div className="mt-1 grid grid-cols-[1fr,auto,1fr] gap-4">
+                    <div className="flex flex-col justify-self-start">
                         <span className="text-[11px] font-medium uppercase tracking-tight text-on-surface-variant">Event Date</span>
                         <div className="flex items-center gap-1">
-                            <MaterialIcon icon="calendar_today" className="text-on-surface-variant" size="text-[16px]" />
+                            <MaterialIcon icon="calendar_today" className="text-on-surface-variant"
+                                          size="text-[16px]" />
                             <span className="text-[13px] font-medium text-on-surface">{eventDate}</span>
                         </div>
                     </div>
-                    <div className="flex flex-col">
-                        <span className={`text-[11px] font-medium uppercase tracking-tight ${deadlineClassName}`}>Deadline</span>
+
+                    <div className="flex flex-col justify-self-center">
+                        <span
+                            className={`text-[11px] font-medium uppercase tracking-tight ${deadlineClassName}`}>Deadline</span>
                         <div className="flex items-center gap-1">
                             <MaterialIcon icon="timer" className={deadlineClassName} size="text-[16px]" />
                             <span className={`text-[13px] font-medium ${deadlineClassName}`}>{deadline}</span>
                         </div>
                     </div>
+
+                    <span
+                        className={`inline-flex items-center justify-center rounded-full px-2 py-1 text-[11px] font-bold uppercase justify-self-end ${statusClassName} 
+                            ${status == EventStatus.DEADLINE ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}`}>
+                            {status}
+                    </span>
                 </div>
+
             </div>
+
         </div>
     );
 }

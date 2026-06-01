@@ -64,13 +64,8 @@ export function useAdminControls(
             ? { eventName: '', eventDate: '', contributionDeadline: '' }
             : { name: '', description: '', price: '', url: '' }
     );
-    // if (params.type === 'Event') {
-    //     params.data;
-    // }
-
 
     const adminSettingsClick = (itemId: number) => {
-
 
         if (isEventMode) {
             const item = params.data.find((entry) => entry.id === itemId) ?? null;
@@ -88,9 +83,6 @@ export function useAdminControls(
                 contributionDeadline: item!.deadline
             });
         } else {
-            console.log('choosing');
-            console.log(params.data)
-            console.log(params.recipientId)
             const item = params.data[params.recipientId].find((entry) => entry.id === itemId) ?? null;
             if (!item) {
                 return;

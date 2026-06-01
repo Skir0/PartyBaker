@@ -1,5 +1,15 @@
 import type { EventFormData } from './form.types.ts';
 
+
+export enum EventStatus {
+
+    POLLING= "polling",
+    DEADLINE = "deadline",
+    PAYMENT = "payment",
+    FINISHED = "finished",
+    CANCELLED = "cancelled"
+}
+
 export interface EventAdminSheetProps {
     isOpen: boolean;
     eventTitle: string;
@@ -24,19 +34,4 @@ export interface DateFieldsProps {
 export interface EventFormProps {
     formData: EventFormData;
     onChange: (field: keyof EventFormData) => (e: React.ChangeEvent<HTMLInputElement>) => void;
-}
-
-export interface EventOverviewCardProps {
-    title: string;
-    participants: string;
-    imageUrl: string;
-    imageAlt: string;
-    status: string;
-    statusClassName: string;
-    eventDate: string;
-    deadline: string;
-    deadlineClassName?: string;
-    isAdmin?: boolean;
-    onSettingsClick?: () => void;
-    onClick?: () => void;
 }

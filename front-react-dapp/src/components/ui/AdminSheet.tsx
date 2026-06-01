@@ -1,9 +1,11 @@
 import { MaterialIcon } from './MaterialIcon.tsx';
 import {
-    type AdminSheetProps,
+    type AdminSheetProps, SheetType
 } from '../../types/sheet.types.ts';
 import { ChangeGiftForm } from '../forms/ChangeGiftForm.tsx';
 import { EventForm } from '../forms/EventForm.tsx';
+import { Action, ConfirmActionButton } from './ConfirmActionButton.tsx';
+import { useState } from 'react';
 
 export function AdminSheet({
                                     isOpen,
@@ -15,8 +17,17 @@ export function AdminSheet({
                                     onSave,
                                     onCancelClick,
                                     onKeepEvent,
-                                    onConfirmCancel
+                                    onConfirmCancel,
+                                    finalizeButtonProp
+
+
                                 }: AdminSheetProps) {
+
+    const [isFinalizeConfirming, setIsFinalizeConfirming] = useState<boolean>(false)
+    console.log("inside admin", finalizeButtonProp)
+
+
+
     if (!isOpen) {
         return null;
     }
@@ -69,55 +80,25 @@ export function AdminSheet({
                             onChange={onChange}
                         />
                     )}
+                    {type === "Event" && finalizeButtonProp && (
+                        <ConfirmActionButton
+                            type={type}
+                            actionName={Action.FINALIZE}
+                            isActionConfirming={isFinalizeConfirming}
+                            onActionClick={() => setIsFinalizeConfirming(true)}
+                            onKeepAction={() => setIsFinalizeConfirming(false)}
+                            onConfirmAction={onConfirmCancel}/>
+                    )}
+                    
+                    <ConfirmActionButton
+                        type={type}
+                        actionName={Action.CANCEL}
+                        isActionConfirming={isCancelConfirming}
+                        onActionClick={onCancelClick}
+                        onKeepAction={onKeepEvent}
+                        onConfirmAction={onConfirmCancel}/>
 
-                    <div className="rounded-xl bg-error-container/30 p-4">
-                        {!isCancelConfirming ? (
-                            <button
-                                type="button"
-                                onClick={onCancelClick}
-                                className="flex w-full items-center justify-between gap-4 text-left transition-transform active:scale-[0.99]"
-                            >
-                                <div className="flex items-center gap-3">
-                                    <MaterialIcon icon="cancel" className="text-error" />
-                                    <div>
-                                        <div className="text-sm font-bold text-error">Cancel {type}</div>
-                                        <div className="text-[11px] text-on-error-container/70">
-                                            This action cannot be undone.
-                                        </div>
-                                    </div>
-                                </div>
-                                <MaterialIcon icon="chevron_right" className="text-error/50" />
-                            </button>
-                        ) : (
-                            <div className="space-y-3">
-                                <div className="flex items-start gap-3">
-                                    <MaterialIcon icon="warning" className="text-error" />
-                                    <div>
-                                        <p className="text-sm font-bold text-error">Cancel this {type}</p>
-                                        <p className="text-[11px] text-on-error-container/80">
-                                            All participants will lose access to this {type}.
-                                        </p>
-                                    </div>
-                                </div>
-                                <div className="flex gap-3">
-                                    <button
-                                        type="button"
-                                        onClick={onKeepEvent}
-                                        className="flex-1 rounded-xl bg-surface-container-lowest px-4 py-3 text-sm font-semibold text-on-surface transition-transform active:scale-[0.98]"
-                                    >
-                                        Keep {type}
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={onConfirmCancel}
-                                        className="flex-1 rounded-xl bg-error px-4 py-3 text-sm font-semibold text-on-error transition-transform active:scale-[0.98]"
-                                    >
-                                        Confirm Cancel
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-                    </div>
+
 
                     <div className="pb-8 pt-2">
                         <button

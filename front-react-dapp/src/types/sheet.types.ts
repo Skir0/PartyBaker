@@ -15,6 +15,8 @@ type AdminSheetBaseProps = {
     onCancelClick: () => void;
     onKeepEvent: () => void;
     onConfirmCancel: () => void;
+    finalizeButtonProp?: boolean;
+
 };
 
 type GiftAdminSheetVariant = AdminSheetBaseProps & ChangeGiftFormProps & {

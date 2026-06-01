@@ -39,6 +39,16 @@ export function EventsDashboardPage() {
         onDelete: deleteEvent
     });
 
+
+    const isDeadlinePassed = (deadlineStr: string) => {
+        if (!deadlineStr) return false;
+        const deadline = new Date(new Date(deadlineStr).setHours(0, 0, 0, 0));
+        const today = new Date(new Date().setHours(0, 0, 0, 0));
+        return deadline <= today;
+    };
+
+     const activeEvent = events.find(e => e.id === selectedItem?.id);
+
     return (
         <div className="min-h-screen bg-background text-on-background">
             <EventsDashboardHeader />
@@ -69,10 +79,10 @@ export function EventsDashboardPage() {
 
                     {events.map((event) => (
                         <EventOverviewCard
+                            eventId={event.id}
                             key={event.id}
                             title={event.name}
                             participants={`${event.participants_amount} Participants`}
-                            status="Active" // you can derive this later
                             eventDate={event.date}
                             deadline={event.deadline}
                             imageUrl={''}
@@ -104,7 +114,6 @@ export function EventsDashboardPage() {
 
             <BottomNavBar />
 
-
             <AdminSheet
                 isOpen={selectedItem !== null}
                 participantCount={
@@ -121,7 +130,8 @@ export function EventsDashboardPage() {
                 onKeepEvent={() => setIsCancelConfirming(false)}
                 onConfirmCancel={handleConfirmCancel}
                 type={SheetType.EVENT}
-            />
+                finalizeButtonProp={isDeadlinePassed(activeEvent?.deadline!)}
+            ></AdminSheet>
 
 
         </div>

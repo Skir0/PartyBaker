@@ -5,6 +5,7 @@ export interface EventResponse {
     deadline: string;
     participants_amount: number;
     is_admin: boolean;
+    status: string;
 }
 
 export interface RecipientResponse {

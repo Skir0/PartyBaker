@@ -9,6 +9,7 @@ type EventResponse struct {
 	Deadline           string `json:"deadline"`
 	ParticipantsAmount int32  `json:"participants_amount"`
 	IsAdmin            bool   `json:"is_admin"`
+	Status             string `json:"status"`
 }
 
 func ConvertEventsToResponses(events []db.GetEventsInfoByUserIDRow, currentUserID int64) []EventResponse {
@@ -21,6 +22,7 @@ func ConvertEventsToResponses(events []db.GetEventsInfoByUserIDRow, currentUserI
 			Deadline:           event.Deadline.Time.Format("2006-01-02"),
 			ParticipantsAmount: event.ParticipantsCount,
 			IsAdmin:            int64(event.AdminID) == currentUserID,
+			Status:             event.Status.String,
 		}
 	}
 	return eventResponses

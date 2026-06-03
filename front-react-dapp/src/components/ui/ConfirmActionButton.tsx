@@ -1,5 +1,5 @@
 import { MaterialIcon } from './MaterialIcon.tsx';
-import type { SheetType } from '../../types/sheet.types.ts';
+import type { SheetType } from './AdminSheet.tsx';
 
 export enum Action {
     FINALIZE= "Finalize",
@@ -24,11 +24,11 @@ export function ConfirmActionButton({
                                         onConfirmAction
                                     }: ConfirmActionButtonProps) {
 
-    const containerClassName = actionName === Action.CANCEL ? "bg-error-container"
-        : "bg-amber-200"
+    const containerClassName = actionName === Action.CANCEL ? 'error-container'
+        : 'amber-200'
 
     return (
-        <div className={`rounded-xl ${containerClassName}/30 p-4`}>
+        <div className={`rounded-xl bg- ${containerClassName}/30 p-4`}>
             {!isActionConfirming ? (
                 <button
                     type="button"
@@ -51,7 +51,7 @@ export function ConfirmActionButton({
                     <div className="flex items-start gap-3">
                         <MaterialIcon icon="warning" className="text-error" />
                         <div>
-                            <p className="text-sm font-bold text-error">Cancel this {type}</p>
+                            <p className="text-sm font-bold text-error">{actionName} this {type}</p>
                             <p className="text-[11px] text-on-error-container/80">
                                 {
                                     actionName === Action.CANCEL ? `All participants will lose access to this ${type}` :

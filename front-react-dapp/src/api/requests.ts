@@ -11,6 +11,10 @@ export interface UpdateEventRequest {
     deadline: string;
 }
 
+export interface ChangeStatusRequest {
+    status: string;
+}
+
 export interface UpdateGiftRequest {
     name: string;
     target_amount: number;

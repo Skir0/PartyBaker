@@ -165,3 +165,32 @@ func (h *Handler) JoinEventByCode(writer http.ResponseWriter, request *http.Requ
 	}
 
 }
+func (h *Handler) ChangeEventStatus(writer http.ResponseWriter, request *http.Request) {
+	fmt.Println("inside ChangeEventStatus")
+
+	eventParam := chi.URLParam(request, "eventId")
+	eventID, err := strconv.Atoi(eventParam)
+	if err != nil {
+		fmt.Println(err)
+		writer.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	statusRequest := &ChangeStatusRequest{}
+	err = json.NewDecoder(request.Body).Decode(&statusRequest)
+	if err != nil {
+		fmt.Println(err)
+		writer.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	fmt.Println("status:", statusRequest.Status)
+	err = h.repo.ChangeEventStatus(request.Context(), db.ChangeEventStatusParams{
+		ID:     int32(eventID),
+		Status: utils.ParseJsonString(statusRequest.Status),
+	})
+	if err != nil {
+		fmt.Println(err)
+		writer.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+}

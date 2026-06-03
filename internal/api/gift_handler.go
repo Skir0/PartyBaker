@@ -253,9 +253,13 @@ func (h *Handler) FinalizeEventGifts(writer http.ResponseWriter, request *http.R
 		http.Error(writer, "failed to finalize event gifts", http.StatusInternalServerError)
 		return
 	}
-	//for _, gift := range selectedGiftsInfo {
-	//	h.DeployGiftContract(writer, request, gift.ID)
-	//}
+	for _, gift := range selectedGiftsInfo {
+		err = h.DeployGiftContract(writer, request, gift.ID)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+	}
 	writer.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(writer).Encode(responses.ConvertGiftsToResponses(selectedGiftsInfo))
 }

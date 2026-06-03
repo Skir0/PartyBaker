@@ -79,3 +79,15 @@ func (r *Repository) DeleteEvent(ctx context.Context, params db.DeleteEventParam
 
 	return nil
 }
+
+func (r *Repository) ChangeEventStatus(ctx context.Context, params db.ChangeEventStatusParams) error {
+
+	err := r.query.ChangeEventStatus(ctx, db.ChangeEventStatusParams{
+		ID:     params.ID,
+		Status: params.Status,
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+}

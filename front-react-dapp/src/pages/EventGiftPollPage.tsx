@@ -9,13 +9,13 @@ import {
     type RecipientResponse
 } from '../types/event-domain.types.ts';
 import type { GiftFormData } from '../types/form.types.ts';
-import { SheetType } from '../types/sheet.types.ts';
 import { useEventGiftPoll } from '../hooks/useEventGiftPoll.ts';
 import { useAdminControls } from '../hooks/useAdminControls.ts';
 import { deleteGift, updateGift } from '../api/giftService.ts';
-import { AdminSheet } from '../components/ui/AdminSheet.tsx';
+import { SheetType } from '../components/ui/AdminSheet.tsx';
 import { useAuth } from '../contexts/AuthContext.tsx';
 import { GiftPaymentStatus } from '../components/ui/GiftPaymentStatus.tsx';
+import { GiftAdminSheet } from '../components/ui/GiftAdminSheet.tsx';
 
 
 export function EventGiftPollPage() {
@@ -168,7 +168,7 @@ export function EventGiftPollPage() {
                 )}
 
 
-                <AdminSheet
+                <GiftAdminSheet
                     isOpen={selectedItem != null}
                     isCancelConfirming={isCancelConfirming}
                     onClose={closeAdminSheet}
@@ -177,13 +177,9 @@ export function EventGiftPollPage() {
                     onKeepEvent={() => setIsCancelConfirming(false)}
                     onConfirmCancel={handleConfirmCancel}
                     formData={adminFormData as GiftFormData}
-                    onChange={handleAdminFormChange}
-                    type={SheetType.GIFT}
+                    onChange={handleAdminFormChange as ((field: keyof GiftFormData) => (e: React.ChangeEvent<HTMLInputElement>) => void)}
                 />
             </main>
-
-            {/*<EventGiftPollNav />*/}
-
 
         </div>
     );

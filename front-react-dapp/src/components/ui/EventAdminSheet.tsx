@@ -1,10 +1,17 @@
+import { MaterialIcon } from './MaterialIcon.tsx';
+import { EventForm } from '../forms/EventForm.tsx';
+import { Action, ConfirmActionButton } from './ConfirmActionButton.tsx';
+import type { Dispatch, SetStateAction } from 'react';
+import type { EventFormProps } from '../../types/event-ui.types.ts';
+import type { FinalizeResult } from '../../hooks/useFinalizeEvent.ts';
+
 
 export enum SheetType {
-    GIFT = "Gift",
-    EVENT = "Event"
+    GIFT = 'Gift',
+    EVENT = 'Event'
 }
 
-export type AdminSheetBaseProps = {
+type AdminSheetBaseProps = {
     isOpen: boolean;
     participantCount?: number;
     isCancelConfirming: boolean;
@@ -13,28 +20,39 @@ export type AdminSheetBaseProps = {
     onCancelClick: () => void;
     onKeepEvent: () => void;
     onConfirmCancel: () => void;
-
+    finalizeButtonProp?: boolean;
+    isFinalizeConfirming?: boolean;
+    setIsFinalizeConfirming?: Dispatch<SetStateAction<boolean>>;
 
 };
 
-export function AdminSheet({
-                                    isOpen,
-                                    type,
-                                    formData,
-                                    isCancelConfirming,
-                                    onChange,
-                                    onClose,
-                                    onSave,
-                                    onCancelClick,
-                                    onKeepEvent,
-                                    onConfirmCancel,
+type EventAdminSheetVariant = AdminSheetBaseProps & EventFormProps & {
+    onConfirmFinalize: () => Promise<FinalizeResult>
+    finalizeButtonProp?: boolean;
+    isFinalizeConfirming?: boolean;
+    setIsFinalizeConfirming?: Dispatch<SetStateAction<boolean>>;
+
+};
 
 
-                                }: AdminSheetProps) {
+export function EventAdminSheet({
+                               isOpen,
+                               formData,
+                               isCancelConfirming,
+                               onChange,
+                               onClose,
+                               onSave,
+                               onCancelClick,
+                               onKeepEvent,
+                               onConfirmCancel,
+                               onConfirmFinalize,
+                               finalizeButtonProp,
+                               setIsFinalizeConfirming,
+                               isFinalizeConfirming
 
-    console.log("inside admin", finalizeButtonProp)
+                           }: EventAdminSheetVariant) {
 
-
+    console.log('inside admin', finalizeButtonProp);
 
 
     if (!isOpen) {
@@ -45,9 +63,8 @@ export function AdminSheet({
         <div
             className="fixed inset-0 z-[60] flex items-end justify-center bg-on-background/20 backdrop-blur-sm md:items-center md:p-4"
             onClick={() => {
-                onClose()
-                if (type == "Event")
-                    setIsFinalizeConfirming!(false)
+                onClose();
+                setIsFinalizeConfirming!(false);
             }}
         >
             <div
@@ -75,41 +92,34 @@ export function AdminSheet({
                     <div className="rounded-xl bg-surface-container-low p-4">
                         <div className="flex items-center justify-between gap-4">
                             <div>
-                                <p className="text-sm font-semibold text-on-surface">{type} Access</p>
-                                <p className="text-xs text-on-surface-variant">You can edit or cancel this {type}.</p>
+                                <p className="text-sm font-semibold text-on-surface">{SheetType.EVENT} Access</p>
+                                <p className="text-xs text-on-surface-variant">You can edit or cancel this {SheetType.EVENT}.</p>
                             </div>
                         </div>
                     </div>
 
-                    {type === "Gift" && (
-                        <ChangeGiftForm
-                            formData={formData}
-                            onChange={onChange}
-                        />
-                    )}
-                    {type === "Event" && (
-                        <EventForm
-                            formData={formData}
-                            onChange={onChange}
-                        />
-                    )}
-                    {type === "Event" && finalizeButtonProp && (
+
+                    <EventForm
+                        formData={formData}
+                        onChange={onChange} />
+
+                    {finalizeButtonProp && (
                         <ConfirmActionButton
-                            type={type}
+                            type={SheetType.EVENT}
                             actionName={Action.FINALIZE}
                             isActionConfirming={isFinalizeConfirming!}
                             onActionClick={() => setIsFinalizeConfirming!(true)}
                             onKeepAction={() => setIsFinalizeConfirming!(false)}
-                            onConfirmAction={onConfirmFinalize}/>
+                            onConfirmAction={onConfirmFinalize} />
                     )}
 
                     <ConfirmActionButton
-                        type={type}
+                        type={SheetType.EVENT}
                         actionName={Action.CANCEL}
                         isActionConfirming={isCancelConfirming}
                         onActionClick={onCancelClick}
                         onKeepAction={onKeepEvent}
-                        onConfirmAction={onConfirmCancel}/>
+                        onConfirmAction={onConfirmCancel} />
 
                     <div className="pb-8 pt-2">
                         <button

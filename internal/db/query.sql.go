@@ -57,6 +57,22 @@ func (q *Queries) ChangeAdmin(ctx context.Context, arg ChangeAdminParams) error 
 	return err
 }
 
+const changeEventStatus = `-- name: ChangeEventStatus :exec
+update events
+set status = $2
+where id = $1
+`
+
+type ChangeEventStatusParams struct {
+	ID     int32
+	Status pgtype.Text
+}
+
+func (q *Queries) ChangeEventStatus(ctx context.Context, arg ChangeEventStatusParams) error {
+	_, err := q.db.Exec(ctx, changeEventStatus, arg.ID, arg.Status)
+	return err
+}
+
 const changeTargetAmount = `-- name: ChangeTargetAmount :exec
 update Gifts
 set target_amount = $1
@@ -132,7 +148,7 @@ func (q *Queries) CheckRecipientParticipantForEvent(ctx context.Context, arg Che
 const createEvent = `-- name: CreateEvent :one
 insert into Events (name, date, deadline, admin_id, join_code)
 values ($1, $2, $3, $4, $5)
-returning id, name, date, deadline, admin_id, join_code
+returning id, name, date, deadline, admin_id, join_code, status
 `
 
 type CreateEventParams struct {
@@ -159,6 +175,7 @@ func (q *Queries) CreateEvent(ctx context.Context, arg CreateEventParams) (Event
 		&i.Deadline,
 		&i.AdminID,
 		&i.JoinCode,
+		&i.Status,
 	)
 	return i, err
 }
@@ -566,7 +583,7 @@ func (q *Queries) GetEventIdByJoinCode(ctx context.Context, joinCode pgtype.Text
 }
 
 const getEventInfoById = `-- name: GetEventInfoById :one
-select events.id, events.name, events.date, events.deadline, events.admin_id, events.join_code , count(distinct p.id)::int as participants_count from events
+select events.id, events.name, events.date, events.deadline, events.admin_id, events.join_code, events.status , count(distinct p.id)::int as participants_count from events
                                                            left join participants p on events.id = p.event_id
 where events.id = $1
 group by events.id, name, date, deadline, admin_id, join_code
@@ -580,6 +597,7 @@ type GetEventInfoByIdRow struct {
 	Deadline          pgtype.Timestamptz
 	AdminID           int32
 	JoinCode          pgtype.Text
+	Status            pgtype.Text
 	ParticipantsCount int32
 }
 
@@ -593,6 +611,7 @@ func (q *Queries) GetEventInfoById(ctx context.Context, id int32) (GetEventInfoB
 		&i.Deadline,
 		&i.AdminID,
 		&i.JoinCode,
+		&i.Status,
 		&i.ParticipantsCount,
 	)
 	return i, err
@@ -605,6 +624,7 @@ select
     e.date,
     e.deadline,
     e.admin_id,
+    e.status,
     count(distinct p.id)::int as participants_count
 from events e
          left join participants p on p.event_id = e.id
@@ -624,6 +644,7 @@ type GetEventsInfoByUserIDRow struct {
 	Date              pgtype.Timestamptz
 	Deadline          pgtype.Timestamptz
 	AdminID           int32
+	Status            pgtype.Text
 	ParticipantsCount int32
 }
 
@@ -642,6 +663,7 @@ func (q *Queries) GetEventsInfoByUserID(ctx context.Context, adminID int32) ([]G
 			&i.Date,
 			&i.Deadline,
 			&i.AdminID,
+			&i.Status,
 			&i.ParticipantsCount,
 		); err != nil {
 			return nil, err
@@ -683,12 +705,13 @@ func (q *Queries) GetGiftByContract(ctx context.Context, contractAddress pgtype.
 }
 
 const getGiftForDeployment = `-- name: GetGiftForDeployment :one
-select id, target_amount, status, contract_address,
-       admin_id, collected_amount
-from gifts
-where id = $1
-  and admin_id = $2
-  and status in ('selected', 'active')
+select g.id, g.target_amount, g.status, g.contract_address,
+       g.admin_id, g.collected_amount
+from gifts g
+         join events e on e.id = g.event_id
+where g.id = $1
+  and e.admin_id = $2
+  and g.status in ('selected', 'active')
 limit 1
 `
 

@@ -4,8 +4,8 @@ import {
 } from '../types/event-domain.types.ts';
 import type { EventFormData, GiftFormData } from '../types/form.types.ts';
 import type { GiftInfoResponse } from '../types/gift.types.ts';
-import { SheetType } from '../types/sheet.types.ts';
 import type { UpdateEventRequest, UpdateGiftRequest } from '../api/requests.ts';
+import { SheetType } from '../components/ui/AdminSheet.tsx';
 
 export type UseEventAdminControlsParams = {
     type: SheetType.EVENT;
@@ -13,6 +13,7 @@ export type UseEventAdminControlsParams = {
     setData: Dispatch<SetStateAction<EventResponse[]>>;
     onUpdate: (eventId: number, payload: UpdateEventRequest) => Promise<EventResponse>;
     onDelete: (eventId: number) => Promise<void>;
+
 };
 
 export type UseGiftAdminControlsParams = {
@@ -64,6 +65,7 @@ export function useAdminControls(
             ? { eventName: '', eventDate: '', contributionDeadline: '' }
             : { name: '', description: '', price: '', url: '' }
     );
+
 
     const adminSettingsClick = (itemId: number) => {
 
@@ -175,11 +177,12 @@ export function useAdminControls(
         }
     };
 
+
+
     const commonResult = {
         selectedItem,
         adminFormData,
         isCancelConfirming,
-        error,
         adminSettingsClick,
         closeAdminSheet,
         handleAdminFormChange,

@@ -1,18 +1,17 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { EventStatus } from '../types/event-ui.types.ts';
+import { changeEventStatus } from '../api/eventService.ts';
+import type { ChangeStatusRequest } from '../api/requests.ts';
 
 
-export function useEventOverviewCard(deadlineStr: string) {
-
-
-    const [status, setStatus] = useState<EventStatus>(EventStatus.POLLING);
+export function useEventOverviewCard(eventId: number, currentStatus: string, deadlineStr: string) {
 
 
     const normalizeDate = (date: Date) =>
         new Date(date.getFullYear(), date.getMonth(), date.getDate());
 
     useEffect(() => {
-        if (status != EventStatus.POLLING) {
+        if (currentStatus != EventStatus.POLLING) {
             return;
         }
         const loadStatus = async () => {
@@ -23,15 +22,12 @@ export function useEventOverviewCard(deadlineStr: string) {
             console.log("isDeadline " + (deadline <= today) + " " + deadlineStr)
 
             if (deadline <= today) {
-                setStatus(EventStatus.DEADLINE)
+                await changeEventStatus(eventId, {
+                    status: 'deadline'
+                })
             }
         }
         void loadStatus();
-    }, [deadlineStr, status]);
-
-
-    return {
-        status,
-    }
+    }, [deadlineStr, currentStatus, eventId]);
 
 }

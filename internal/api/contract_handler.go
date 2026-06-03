@@ -53,40 +53,35 @@ func getContractData(adminAddress string, targetAmount int64, collectedAmount in
 	return data, nil
 }
 
-func (h *Handler) DeployGiftContract(writer http.ResponseWriter, request *http.Request, giftID int32) {
+func (h *Handler) DeployGiftContract(writer http.ResponseWriter, request *http.Request, giftID int32) error {
 	// giftID, err := strconv.Atoi(chi.URLParam(request, "giftId"))
 
 	currentUserID, ok := request.Context().Value(UserIDKey).(int64)
 	if !ok {
-		http.Error(writer, "unauthorized", http.StatusUnauthorized)
-		return
+		return errors.New("unauthorized")
 	}
 
 	gift, err := h.repo.GetGiftForDeployment(request.Context(), int32(giftID), int32(currentUserID))
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			http.Error(writer, "gift not found or not deployable", http.StatusNotFound)
-			return
+			return err
 		}
 		http.Error(writer, "failed to load gift", http.StatusInternalServerError)
-		return
+		return err
 	}
 
 	if gift.ContractAddress.Valid && gift.ContractAddress.String != "" {
-		http.Error(writer, "gift contract is already deployed", http.StatusConflict)
-		return
+		return errors.New("gift contract already exists")
 	}
 
 	adminAddress, err := h.repo.GetUserWalletAddress(request.Context(), int64(gift.AdminID))
 	if err != nil {
-		http.Error(writer, "failed to load admin wallet address", http.StatusBadRequest)
-		return
+		return err
 	}
 
 	w, err := getWallet(h.api)
 	if err != nil {
-		http.Error(writer, "failed to load deployer wallet", http.StatusInternalServerError)
-		return
+		return err
 	}
 
 	log.Println("Deploy wallet:", w.WalletAddress().String())
@@ -94,25 +89,21 @@ func (h *Handler) DeployGiftContract(writer http.ResponseWriter, request *http.R
 	// Safely decode HEX BOC
 	codeCellBytes, err := hex.DecodeString(os.Getenv("HEX_BOC"))
 	if err != nil {
-		http.Error(writer, "Failed to decode HEX_BOC", http.StatusInternalServerError)
-		return
+		return err
 	}
 
 	codeCell, err := cell.FromBOC(codeCellBytes)
 	if err != nil {
-		http.Error(writer, "Failed to parse code cell BOC", http.StatusInternalServerError)
-		return
+		return err
 	}
 
 	dataCell, err := getContractData(adminAddress, gift.TargetAmount.Int64, gift.CollectedAmount.Int64, codeCell)
 	if err != nil {
-		http.Error(writer, err.Error(), http.StatusBadRequest)
-		return
+		return err
 	}
 
 	msgBody := cell.BeginCell().EndCell()
 
-	// Deploy using your preferred method!
 	addr, _, _, err := w.DeployContractWaitTransaction(
 		context.Background(),
 		tlb.MustFromTON("0.02"),
@@ -123,15 +114,13 @@ func (h *Handler) DeployGiftContract(writer http.ResponseWriter, request *http.R
 
 	if err != nil {
 		log.Println("Deployment error:", err)
-		http.Error(writer, "Failed to deploy contract to blockchain", http.StatusInternalServerError)
-		return
+		return err
 	}
 
 	log.Println("Deployed Gift Contract addr:", addr.String())
 
 	if err := h.repo.SaveGiftDeployment(request.Context(), int32(giftID), int32(currentUserID), addr.String()); err != nil {
-		http.Error(writer, "contract deployed but failed to persist address", http.StatusInternalServerError)
-		return
+		return err
 	}
 
 	writer.Header().Set("Content-Type", "application/json")
@@ -139,4 +128,5 @@ func (h *Handler) DeployGiftContract(writer http.ResponseWriter, request *http.R
 		"address": addr.String(),
 		"status":  "success",
 	})
+	return nil
 }

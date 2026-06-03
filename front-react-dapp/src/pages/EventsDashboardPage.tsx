@@ -6,9 +6,12 @@ import { BottomNavBar } from '../components/ui/BottomNavBar.tsx';
 import { MaterialIcon } from '../components/ui/MaterialIcon.tsx';
 import { useEventsDashboard } from '../hooks/useEventsDashboard.ts';
 import { useAdminControls } from '../hooks/useAdminControls.ts';
-import { SheetType } from '../types/sheet.types.ts';
-import { AdminSheet } from '../components/ui/AdminSheet.tsx';
+import { AdminSheet, SheetType } from '../components/ui/AdminSheet.tsx';
 import { deleteEvent, updateEvent } from '../api/eventService.ts';
+import { useState } from 'react';
+import { useFinalizeEvent } from '../hooks/useFinalizeEvent.ts';
+import { EventAdminSheet } from '../components/ui/EventAdminSheet.tsx';
+import type { EventFormData } from '../types/form.types.ts';
 
 export function EventsDashboardPage() {
 
@@ -39,6 +42,11 @@ export function EventsDashboardPage() {
         onDelete: deleteEvent
     });
 
+    const {
+        handleFinalizeEvent,
+        finalizeResult
+    } = useFinalizeEvent(selectedItem?.id!);
+
 
     const isDeadlinePassed = (deadlineStr: string) => {
         if (!deadlineStr) return false;
@@ -48,6 +56,9 @@ export function EventsDashboardPage() {
     };
 
      const activeEvent = events.find(e => e.id === selectedItem?.id);
+
+    const [isFinalizeConfirming, setIsFinalizeConfirming] = useState<boolean>(false)
+
 
     return (
         <div className="min-h-screen bg-background text-on-background">
@@ -87,6 +98,7 @@ export function EventsDashboardPage() {
                             deadline={event.deadline}
                             imageUrl={''}
                             imageAlt={''}
+                            status={event.status}
                             statusClassName={''}
                             isAdmin={event.is_admin}
                             onSettingsClick={() => adminSettingsClick(event.id)}
@@ -114,24 +126,29 @@ export function EventsDashboardPage() {
 
             <BottomNavBar />
 
-            <AdminSheet
+            <EventAdminSheet
                 isOpen={selectedItem !== null}
                 participantCount={
                     selectedItem != null && 'participants_amount' in selectedItem
                         ? selectedItem.participants_amount
                         : 0
                 }
-                formData={adminFormData}
+                formData={adminFormData as EventFormData}
                 isCancelConfirming={isCancelConfirming}
-                onChange={handleAdminFormChange}
-                onClose={closeAdminSheet}
+                onChange={handleAdminFormChange as  ((field: keyof EventFormData) => (e: React.ChangeEvent<HTMLInputElement>) => void)}
+                onClose={() => {
+                    setIsFinalizeConfirming(false)
+                    closeAdminSheet()
+                }}
                 onSave={handleSaveAdminChanges}
                 onCancelClick={() => setIsCancelConfirming(true)}
                 onKeepEvent={() => setIsCancelConfirming(false)}
                 onConfirmCancel={handleConfirmCancel}
-                type={SheetType.EVENT}
+                onConfirmFinalize={handleFinalizeEvent}
+                isFinalizeConfirming={isFinalizeConfirming}
+                setIsFinalizeConfirming={setIsFinalizeConfirming}
                 finalizeButtonProp={isDeadlinePassed(activeEvent?.deadline!)}
-            ></AdminSheet>
+            ></EventAdminSheet>
 
 
         </div>

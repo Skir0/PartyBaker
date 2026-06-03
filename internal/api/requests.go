@@ -15,6 +15,9 @@ type CreateEventRequest struct {
 	AdminId  int32  `json:"admin_id"`
 }
 
+type ChangeStatusRequest struct {
+	Status string `json:"status"`
+}
 type UpdateEventRequest struct {
 	Name     string `json:"name"`
 	Date     string `json:"date"`

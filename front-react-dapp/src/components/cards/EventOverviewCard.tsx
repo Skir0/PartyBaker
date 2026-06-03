@@ -1,6 +1,7 @@
 import { MaterialIcon } from '../ui/MaterialIcon.tsx';
 import { EventStatus } from '../../types/event-ui.types.ts';
 import { useEventOverviewCard } from '../../hooks/useEventOverviewCard.ts';
+import { useEffect } from 'react';
 
 
 export interface EventOverviewCardProps {
@@ -10,6 +11,7 @@ export interface EventOverviewCardProps {
     imageUrl: string;
     imageAlt: string;
     statusClassName: string;
+    status: string;
     eventDate: string;
     deadline: string;
     deadlineClassName?: string;
@@ -19,11 +21,13 @@ export interface EventOverviewCardProps {
 }
 
 export function EventOverviewCard({
+                                      eventId,
                                       title,
                                       participants,
                                       imageUrl,
                                       imageAlt,
                                       statusClassName,
+                                      status = 'Polling',
                                       eventDate,
                                       deadline,
                                       deadlineClassName = 'text-on-surface-variant',
@@ -32,7 +36,8 @@ export function EventOverviewCard({
                                       onClick
                                   }: EventOverviewCardProps) {
 
-    const { status } = useEventOverviewCard(deadline);
+    useEventOverviewCard(eventId, status, deadline);
+
 
     return (
         <div

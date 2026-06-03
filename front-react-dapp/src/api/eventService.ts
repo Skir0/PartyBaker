@@ -1,4 +1,4 @@
-import type { CreateEventRequest, JoinEventRequest, UpdateEventRequest } from './requests.ts';
+import type { ChangeStatusRequest, CreateEventRequest, JoinEventRequest, UpdateEventRequest } from './requests.ts';
 import apiClient from './apiClient.ts';
 import type { EventResponse, JoinEventResponse } from '../types/event-domain.types.ts';
 
@@ -28,5 +28,11 @@ export const deleteEvent = async (eventId: number): Promise<void> => {
 export const joinEvent = async (req: JoinEventRequest): Promise<JoinEventResponse> => {
 
     const response = await apiClient.post(`/api/events/join`, req);
+    return response.data;
+};
+
+export const changeEventStatus = async (eventId: number, statusRequest: ChangeStatusRequest) => {
+
+    const response = await apiClient.post(`/api/events/${eventId}/status`, statusRequest);
     return response.data;
 };

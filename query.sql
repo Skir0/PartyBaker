@@ -35,6 +35,7 @@ select
     e.date,
     e.deadline,
     e.admin_id,
+    e.status,
     count(distinct p.id)::int as participants_count
 from events e
          left join participants p on p.event_id = e.id
@@ -285,12 +286,13 @@ where g.id = $1 and u.id = $2
 limit 1;
 
 -- name: GetGiftForDeployment :one
-select id, target_amount, status, contract_address,
-       admin_id, collected_amount
-from gifts
-where id = $1
-  and admin_id = $2
-  and status in ('selected', 'active')
+select g.id, g.target_amount, g.status, g.contract_address,
+       g.admin_id, g.collected_amount
+from gifts g
+         join events e on e.id = g.event_id
+where g.id = $1
+  and e.admin_id = $2
+  and g.status in ('selected', 'active')
 limit 1;
 
 -- name: GetUserWalletAddress :one
@@ -306,3 +308,7 @@ set contract_address = $1
 where id = $2
   and admin_id = $3;
 
+-- name: ChangeEventStatus :exec
+update events
+set status = $2
+where id = $1;

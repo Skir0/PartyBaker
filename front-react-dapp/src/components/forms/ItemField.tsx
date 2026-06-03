@@ -1,5 +1,5 @@
 import { MaterialIcon } from '../ui/MaterialIcon.tsx';
-import { SheetType } from '../../types/sheet.types.ts';
+import type { SheetType } from '../ui/AdminSheet.tsx';
 
 export interface ItemNameFieldProps {
     value: string;

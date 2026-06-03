@@ -50,6 +50,8 @@ func NewRouter(h *Handler) *chi.Mux {
 
 			r.Route("/{eventId}", func(r chi.Router) {
 
+				r.Post("/status", h.ChangeEventStatus)
+
 				// finalize event and it's gifts
 				r.Get("/finalize", h.FinalizeEventGifts)
 

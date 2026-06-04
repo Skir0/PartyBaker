@@ -3,6 +3,7 @@ package api
 import (
 	"PartyBaker/internal/api/responses"
 	"PartyBaker/internal/db"
+	"PartyBaker/internal/utils"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -259,6 +260,15 @@ func (h *Handler) FinalizeEventGifts(writer http.ResponseWriter, request *http.R
 			fmt.Println(err)
 			return
 		}
+	}
+
+	err = h.repo.ChangeEventStatus(request.Context(), db.ChangeEventStatusParams{
+		ID:     int32(eventId),
+		Status: utils.ParseJsonString("payment"),
+	})
+	if err != nil {
+		fmt.Println(err)
+		return
 	}
 	writer.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(writer).Encode(responses.ConvertGiftsToResponses(selectedGiftsInfo))

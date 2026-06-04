@@ -1,3 +1,5 @@
+import type { EventStatus } from './event-ui.types.ts';
+
 export interface EventResponse {
     id: number;
     name: string;
@@ -5,7 +7,7 @@ export interface EventResponse {
     deadline: string;
     participants_amount: number;
     is_admin: boolean;
-    status: string;
+    status: EventStatus;
 }
 
 export interface RecipientResponse {

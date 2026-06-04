@@ -146,48 +146,48 @@ export function useEventGiftPoll(eventId: string | undefined, routeState: any) {
             });
         }
     };
-    const normalizeDate = (date: Date) =>
-        new Date(date.getFullYear(), date.getMonth(), date.getDate());
-
-    const isDeadline = useMemo<boolean>(() => {
-        if (!event?.deadline) {
-            return false;
-        }
-        const deadline = normalizeDate(new Date(event.deadline));
-        const today = normalizeDate(new Date());
-
-        console.log("isDeadline" + (deadline <= today))
-        return deadline <= today;
-    }, [event?.deadline]);
-
-    useEffect(() => {
-        if (!event?.id || !isDeadline) {
-            return
-        }
-
-        const loadSelectedGifts = async () => {
-            try {
-                const response = await finalizeEvent(event.id);
-
-                if (!Array.isArray(response)) {
-                    throw new Error('Invalid finalizeEvent response');
-                }
-
-                const selectedGiftsByRecipient: Record<number, GiftInfoResponse> = {};
-
-                response.forEach(giftInfo => {
-                    selectedGiftsByRecipient[giftInfo.recipient_id] = giftInfo;
-                });
-
-                setSelectedGifts(selectedGiftsByRecipient);
-            }
-            catch (error){
-                setError(current => current ?? `Failed to finalize event. ${error instanceof Error ? error.message : String(error)}`);
-            }
-        }
-
-        void loadSelectedGifts();
-    }, [isDeadline, event?.id])
+    // const normalizeDate = (date: Date) =>
+    //     new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    //
+    // const isDeadline = useMemo<boolean>(() => {
+    //     if (!event?.deadline) {
+    //         return false;
+    //     }
+    //     const deadline = normalizeDate(new Date(event.deadline));
+    //     const today = normalizeDate(new Date());
+    //
+    //     console.log("isDeadline" + (deadline <= today))
+    //     return deadline <= today;
+    // }, [event?.deadline]);
+    //
+    // useEffect(() => {
+    //     if (!event?.id || !isDeadline) {
+    //         return
+    //     }
+    //
+    //     const loadSelectedGifts = async () => {
+    //         try {
+    //             const response = await finalizeEvent(event.id);
+    //
+    //             if (!Array.isArray(response)) {
+    //                 throw new Error('Invalid finalizeEvent response');
+    //             }
+    //
+    //             const selectedGiftsByRecipient: Record<number, GiftInfoResponse> = {};
+    //
+    //             response.forEach(giftInfo => {
+    //                 selectedGiftsByRecipient[giftInfo.recipient_id] = giftInfo;
+    //             });
+    //
+    //             setSelectedGifts(selectedGiftsByRecipient);
+    //         }
+    //         catch (error){
+    //             setError(current => current ?? `Failed to finalize event. ${error instanceof Error ? error.message : String(error)}`);
+    //         }
+    //     }
+    //
+    //     void loadSelectedGifts();
+    // }, [isDeadline, event?.id])
 
     useEffect(() => {
         if (!storageKey) return;
@@ -312,7 +312,6 @@ export function useEventGiftPoll(eventId: string | undefined, routeState: any) {
 
     return {
         event,
-        isDeadline,
         isLoading,
         error,
         recipientFolders,

@@ -1,7 +1,7 @@
 import { MaterialIcon } from '../ui/MaterialIcon.tsx';
 import { EventStatus } from '../../types/event-ui.types.ts';
 import { useEventOverviewCard } from '../../hooks/useEventOverviewCard.ts';
-import { useEffect } from 'react';
+import { useMemo } from 'react';
 
 
 export interface EventOverviewCardProps {
@@ -11,7 +11,7 @@ export interface EventOverviewCardProps {
     imageUrl: string;
     imageAlt: string;
     statusClassName: string;
-    status: string;
+    status: EventStatus;
     eventDate: string;
     deadline: string;
     deadlineClassName?: string;
@@ -27,7 +27,7 @@ export function EventOverviewCard({
                                       imageUrl,
                                       imageAlt,
                                       statusClassName,
-                                      status = 'Polling',
+                                      status = EventStatus.POLLING,
                                       eventDate,
                                       deadline,
                                       deadlineClassName = 'text-on-surface-variant',
@@ -37,6 +37,16 @@ export function EventOverviewCard({
                                   }: EventOverviewCardProps) {
 
     useEventOverviewCard(eventId, status, deadline);
+
+    const statusStyles: Record<EventStatus, string> = {
+        [EventStatus.POLLING]: 'bg-green-100 text-green-800',
+        [EventStatus.DEADLINE]: 'bg-yellow-100 text-yellow-800',
+        [EventStatus.PAYMENT]: 'bg-blue-100 text-blue-800',
+        [EventStatus.CANCELLED]: 'bg-red-100 text-red-800',
+        [EventStatus.FINISHED]: 'bg-purple-100 text-purple-800'
+    };
+
+    const statusStyle = statusStyles[status];
 
 
     return (
@@ -108,10 +118,8 @@ export function EventOverviewCard({
                         </div>
                     </div>
 
-                    <span
-                        className={`inline-flex items-center justify-center rounded-full px-2 py-1 text-[11px] font-bold uppercase justify-self-end ${statusClassName} 
-                            ${status == EventStatus.DEADLINE ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}`}>
-                            {status}
+                    <span className={`inline-flex items-center justify-center rounded-full px-2 py-1 text-[11px] font-bold uppercase justify-self-end ${statusStyle} ${statusClassName}`}>
+                        {status}
                     </span>
                 </div>
 

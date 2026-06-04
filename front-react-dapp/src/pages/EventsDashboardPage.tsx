@@ -6,12 +6,13 @@ import { BottomNavBar } from '../components/ui/BottomNavBar.tsx';
 import { MaterialIcon } from '../components/ui/MaterialIcon.tsx';
 import { useEventsDashboard } from '../hooks/useEventsDashboard.ts';
 import { useAdminControls } from '../hooks/useAdminControls.ts';
-import { AdminSheet, SheetType } from '../components/ui/AdminSheet.tsx';
+import { SheetType } from '../components/ui/AdminSheet.tsx';
 import { deleteEvent, updateEvent } from '../api/eventService.ts';
 import { useState } from 'react';
 import { useFinalizeEvent } from '../hooks/useFinalizeEvent.ts';
 import { EventAdminSheet } from '../components/ui/EventAdminSheet.tsx';
 import type { EventFormData } from '../types/form.types.ts';
+import { EventStatus } from '../types/event-ui.types.ts';
 
 export function EventsDashboardPage() {
 
@@ -147,7 +148,7 @@ export function EventsDashboardPage() {
                 onConfirmFinalize={handleFinalizeEvent}
                 isFinalizeConfirming={isFinalizeConfirming}
                 setIsFinalizeConfirming={setIsFinalizeConfirming}
-                finalizeButtonProp={isDeadlinePassed(activeEvent?.deadline!)}
+                finalizeButtonProp={activeEvent?.status == EventStatus.DEADLINE}
             ></EventAdminSheet>
 
 

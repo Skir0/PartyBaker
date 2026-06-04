@@ -6,6 +6,7 @@ import { GiftSuggestionCard } from '../components/cards/GiftSuggestionCard.tsx';
 import { RecipientFolders } from '../components/ui/RecipientFolders.tsx';
 
 import {
+    type EventResponse,
     type RecipientResponse
 } from '../types/event-domain.types.ts';
 import type { GiftFormData } from '../types/form.types.ts';
@@ -16,6 +17,10 @@ import { SheetType } from '../components/ui/AdminSheet.tsx';
 import { useAuth } from '../contexts/AuthContext.tsx';
 import { GiftPaymentStatus } from '../components/ui/GiftPaymentStatus.tsx';
 import { GiftAdminSheet } from '../components/ui/GiftAdminSheet.tsx';
+import { EventStatus } from '../types/event-ui.types.ts';
+import { useMemo, useState } from 'react';
+
+
 
 
 export function EventGiftPollPage() {
@@ -25,9 +30,10 @@ export function EventGiftPollPage() {
     const routeState = location.state as { recipientsOfEvent?: RecipientResponse[] } | null;
 
 
+
+
     const {
         event,
-        isDeadline,
         isLoading,
         error,
         recipientFolders,
@@ -66,6 +72,14 @@ export function EventGiftPollPage() {
         ? `Voted by the group for ${event.name}. ${event.participants_amount} participants are tracking options before ${event.deadline}.`
         : 'Loading event details.';
 
+
+    const paymentStatus = useMemo(() => {
+        return event?.status == EventStatus.PAYMENT;
+    }, [event])
+
+    console.log("polling status", paymentStatus)
+
+
     function checkAdmin(giftId: number): boolean {
         const recipientId = activeRecipient?.id;
         if (recipientId == null) return false;
@@ -100,7 +114,7 @@ export function EventGiftPollPage() {
                     <p className="py-10 text-center text-sm text-error">{error}</p>
                 )}
 
-                {!isLoading && !error && event && !isDeadline && (
+                {!isLoading && !error && event && !paymentStatus && (
                     <>
                         {isLoadingRecipientGifts && (
                             <p className="py-10 text-center text-sm text-on-surface-variant">
@@ -149,7 +163,7 @@ export function EventGiftPollPage() {
                         </p>
                     </>
                 )}
-                {isDeadline && (
+                {paymentStatus && (
                     <GiftPaymentStatus
                         giftId={selectedGifts[activeRecipient.id]?.id!}
                         contractAddress={selectedGifts[activeRecipient.id]?.contract_address}

@@ -183,3 +183,13 @@ func (r *Repository) FinalizeGiftStatusesOfEvent(ctx context.Context, eventId in
 	return selectedGifts, nil
 
 }
+
+func (r *Repository) GetSelectedGiftsOfEvent(ctx context.Context, eventId int32) ([]db.Gift, error) {
+
+	gifts, err := r.query.GetSelectedGiftsOfEvent(ctx, eventId)
+	if err != nil {
+		return nil, err
+	}
+	return gifts, nil
+
+}

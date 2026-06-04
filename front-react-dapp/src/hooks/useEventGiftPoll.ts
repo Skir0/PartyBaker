@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import {
     addGiftLike, deleteGiftLike,
-    getGiftsInfoByRecipient
+    getGiftsInfoByRecipient, getSelectedGiftsOfEvent
 } from '../api/giftService.ts';
 
 
@@ -16,7 +16,7 @@ import type {
     GiftSuggestion,
     RecipientGiftFolder,
 } from '../types/gift.types.ts';
-import { finalizeEvent, getEventsOfCurrentUser } from '../api/eventService.ts';
+import { getEventsOfCurrentUser } from '../api/eventService.ts';
 import { getRecipientsOfEvent } from '../api/participantsService.ts';
 
 
@@ -160,34 +160,32 @@ export function useEventGiftPoll(eventId: string | undefined, routeState: any) {
     //     return deadline <= today;
     // }, [event?.deadline]);
     //
-    // useEffect(() => {
-    //     if (!event?.id || !isDeadline) {
-    //         return
-    //     }
-    //
-    //     const loadSelectedGifts = async () => {
-    //         try {
-    //             const response = await finalizeEvent(event.id);
-    //
-    //             if (!Array.isArray(response)) {
-    //                 throw new Error('Invalid finalizeEvent response');
-    //             }
-    //
-    //             const selectedGiftsByRecipient: Record<number, GiftInfoResponse> = {};
-    //
-    //             response.forEach(giftInfo => {
-    //                 selectedGiftsByRecipient[giftInfo.recipient_id] = giftInfo;
-    //             });
-    //
-    //             setSelectedGifts(selectedGiftsByRecipient);
-    //         }
-    //         catch (error){
-    //             setError(current => current ?? `Failed to finalize event. ${error instanceof Error ? error.message : String(error)}`);
-    //         }
-    //     }
-    //
-    //     void loadSelectedGifts();
-    // }, [isDeadline, event?.id])
+    useEffect(() => {
+        if (!event?.id) {
+            return
+        }
+        const loadSelectedGifts = async () => {
+            try {
+                const response = await getSelectedGiftsOfEvent(event.id);
+
+                if (!Array.isArray(response)) {
+                    throw new Error('Invalid finalizeEvent response');
+                }
+
+                const selectedGiftsByRecipient: Record<number, GiftInfoResponse> = {};
+
+                response.forEach((giftInfo: GiftInfoResponse) => {
+                    selectedGiftsByRecipient[giftInfo.recipient_id] = giftInfo;
+                });
+
+                setSelectedGifts(selectedGiftsByRecipient);
+            }
+            catch (error){
+                // setError(current => current ?? `Failed to finalize event. ${error instanceof Error ? error.message : String(error)}`);
+            }
+        }
+        void loadSelectedGifts();
+    }, [event?.id])
 
     useEffect(() => {
         if (!storageKey) return;

@@ -21,6 +21,12 @@ export const getGiftsInfoByRecipient = async (eventId: number, recipientId: numb
     return response.data;
 }
 
+export const getSelectedGiftsOfEvent = async (eventId: number) => {
+    const response = await apiClient.get(`/api/events/${eventId}/finalize/selectedGifts`);
+    console.log("response", response)
+    return response.data;
+}
+
 export const updateGift = async (giftId: number, req: UpdateGiftRequest): Promise<GiftInfoResponse> => {
     const response = await apiClient.put(`/api/gifts/${giftId}`, req);
     return response.data;

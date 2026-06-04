@@ -2,11 +2,8 @@ import { MaterialIcon } from './MaterialIcon.tsx';
 import { useGiftPaymentStatus } from '../../hooks/useGiftPaymentStatus.ts';
 
 import { useSendTransaction } from '../../hooks/useSendTransaction.ts';
-import { useAuth } from '../../contexts/AuthContext.tsx';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 
-type ParticipantStatus = 'paid' | 'pending';
-type ParticipantAccent = 'secondary' | 'tertiary' | 'neutral' | 'primary';
 
 interface GiftPaymentProps {
     giftId: number;

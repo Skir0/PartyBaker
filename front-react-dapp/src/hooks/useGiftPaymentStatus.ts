@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import type { PayerResponse } from '../types/event-domain.types.ts';
 import { getCurrentPayer, getPayersInfoForRecipient } from '../api/participantsService.ts';
-import { deployGiftContract } from '../api/giftService.ts';
+import { deployGiftContract, getSelectedGiftsOfEvent } from '../api/giftService.ts';
+import type { GiftInfoResponse } from '../types/gift.types.ts';
 
 export function useGiftPaymentStatus(eventId: number, recipientId: number, giftId: number, contractAddress: string) {
     const [allPayers, setAllPayers] = useState<PayerResponse[]>();
@@ -15,6 +16,10 @@ export function useGiftPaymentStatus(eventId: number, recipientId: number, giftI
     const [deployedAddress, setDeployedAddress] = useState(contractAddress ?? '');
     const hasDeployment = deployedAddress.length > 0;
     const [currentPayer, setCurrentPayer] = useState<PayerResponse>();
+
+    // const [selectedGifts, setSelectedGifts] = useState<Record<number, GiftInfoResponse>>({})
+
+
 
     const pageSize = 5;
 
@@ -78,6 +83,35 @@ export function useGiftPaymentStatus(eventId: number, recipientId: number, giftI
         }
     };
 
+
+    // useEffect(() => {
+    //     if (!eventId) {
+    //         return
+    //     }
+    //     const loadSelectedGifts = async () => {
+    //         try {
+    //             const response = await getSelectedGiftsOfEvent(eventId);
+    //
+    //             if (!Array.isArray(response)) {
+    //                 throw new Error('Invalid finalizeEvent response');
+    //             }
+    //
+    //             const selectedGiftsByRecipient: Record<number, GiftInfoResponse> = {};
+    //
+    //             response.forEach((giftInfo: GiftInfoResponse) => {
+    //                 selectedGiftsByRecipient[giftInfo.recipient_id] = giftInfo;
+    //             });
+    //
+    //             setSelectedGifts(selectedGiftsByRecipient);
+    //         }
+    //         catch (error){
+    //             // setError(current => current ?? `Failed to finalize event. ${error instanceof Error ? error.message : String(error)}`);
+    //         }
+    //     }
+    //     void loadSelectedGifts();
+    // }, [eventId, recipientId])
+
+
     return {
         visiblePayers,
         allPayers,
@@ -89,7 +123,8 @@ export function useGiftPaymentStatus(eventId: number, recipientId: number, giftI
         deployedAddress,
         isDeploying,
         hasDeployment,
-        handleDeploy
+        handleDeploy,
+        // selectedGifts
     };
 
 

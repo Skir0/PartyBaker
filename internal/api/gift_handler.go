@@ -215,6 +215,32 @@ func (h *Handler) RemoveGiftLike(writer http.ResponseWriter, request *http.Reque
 	}
 }
 
+func (h *Handler) GetSelectedGiftsOfEvent(writer http.ResponseWriter, request *http.Request) {
+	fmt.Println("inside GetSelectedGiftsOfEvent")
+	currentUserID, ok := request.Context().Value(UserIDKey).(int64)
+	fmt.Println("currentUserID:", currentUserID)
+	if !ok {
+		http.Error(writer, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+	eventParam := chi.URLParam(request, "eventId")
+	eventId, err := strconv.Atoi(eventParam)
+	if err != nil {
+		http.Error(writer, "invalid eventId", http.StatusBadRequest)
+		return
+	}
+
+	selectedGiftsInfo, err := h.repo.GetSelectedGiftsOfEvent(request.Context(), int32(eventId))
+	if err != nil {
+		fmt.Println(err)
+		http.Error(writer, "invalid eventId", http.StatusBadRequest)
+		return
+	}
+	fmt.Println(selectedGiftsInfo)
+	json.NewEncoder(writer).Encode(responses.ConvertGiftsToResponses(selectedGiftsInfo))
+
+}
+
 func (h *Handler) FinalizeEventGifts(writer http.ResponseWriter, request *http.Request) {
 	fmt.Println("inside finalizeEventGifts")
 	currentUserID, ok := request.Context().Value(UserIDKey).(int64)

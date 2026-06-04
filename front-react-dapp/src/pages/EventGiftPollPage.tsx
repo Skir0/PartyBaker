@@ -6,7 +6,6 @@ import { GiftSuggestionCard } from '../components/cards/GiftSuggestionCard.tsx';
 import { RecipientFolders } from '../components/ui/RecipientFolders.tsx';
 
 import {
-    type EventResponse,
     type RecipientResponse
 } from '../types/event-domain.types.ts';
 import type { GiftFormData } from '../types/form.types.ts';
@@ -18,7 +17,7 @@ import { useAuth } from '../contexts/AuthContext.tsx';
 import { GiftPaymentStatus } from '../components/ui/GiftPaymentStatus.tsx';
 import { GiftAdminSheet } from '../components/ui/GiftAdminSheet.tsx';
 import { EventStatus } from '../types/event-ui.types.ts';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 
 
 
@@ -46,6 +45,7 @@ export function EventGiftPollPage() {
         activeRecipient,
         selectedGifts
     } = useEventGiftPoll(params.eventId, routeState);
+
 
     const {
         selectedItem,

@@ -1,7 +1,6 @@
 import { MaterialIcon } from '../ui/MaterialIcon.tsx';
 import { EventStatus } from '../../types/event-ui.types.ts';
 import { useEventOverviewCard } from '../../hooks/useEventOverviewCard.ts';
-import { useMemo } from 'react';
 
 
 export interface EventOverviewCardProps {

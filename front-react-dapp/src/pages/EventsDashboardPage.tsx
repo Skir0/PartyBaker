@@ -45,16 +45,15 @@ export function EventsDashboardPage() {
 
     const {
         handleFinalizeEvent,
-        finalizeResult
     } = useFinalizeEvent(selectedItem?.id!);
 
 
-    const isDeadlinePassed = (deadlineStr: string) => {
-        if (!deadlineStr) return false;
-        const deadline = new Date(new Date(deadlineStr).setHours(0, 0, 0, 0));
-        const today = new Date(new Date().setHours(0, 0, 0, 0));
-        return deadline <= today;
-    };
+    // const isDeadlinePassed = (deadlineStr: string) => {
+    //     if (!deadlineStr) return false;
+    //     const deadline = new Date(new Date(deadlineStr).setHours(0, 0, 0, 0));
+    //     const today = new Date(new Date().setHours(0, 0, 0, 0));
+    //     return deadline <= today;
+    // };
 
      const activeEvent = events.find(e => e.id === selectedItem?.id);
 

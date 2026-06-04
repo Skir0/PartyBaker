@@ -4,12 +4,9 @@ import { Action, ConfirmActionButton } from './ConfirmActionButton.tsx';
 import type { Dispatch, SetStateAction } from 'react';
 import type { EventFormProps } from '../../types/event-ui.types.ts';
 import type { FinalizeResult } from '../../hooks/useFinalizeEvent.ts';
+import { SheetType } from './AdminSheet.tsx';
 
 
-export enum SheetType {
-    GIFT = 'Gift',
-    EVENT = 'Event'
-}
 
 type AdminSheetBaseProps = {
     isOpen: boolean;

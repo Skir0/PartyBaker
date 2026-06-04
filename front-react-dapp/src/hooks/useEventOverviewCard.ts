@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 import { EventStatus } from '../types/event-ui.types.ts';
 import { changeEventStatus } from '../api/eventService.ts';
-import type { ChangeStatusRequest } from '../api/requests.ts';
 
 
 export function useEventOverviewCard(eventId: number, currentStatus: string, deadlineStr: string) {

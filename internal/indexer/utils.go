@@ -30,11 +30,15 @@ func (worker *Worker) UpdateCache(ctx context.Context) {
 
 		jwAddress, err := tokenClient.GetJettonWallet(ctx, parsedAddr)
 		if err != nil {
+			log.Println("GetJettonWallet error for", parsedAddr.String(), err)
+			continue
+		}
+		if jwAddress == nil {
+			log.Println("jwAddress is nil for", parsedAddr.String())
 			continue
 		}
 		fmt.Println("jwAddress:", jwAddress.Address())
 		newCache[parsedAddr.StringRaw()] = true
-		// newCache[parsedAddr.StringRaw()] = true
 	}
 	worker.activeGifts = newCache
 }

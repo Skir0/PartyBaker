@@ -31,24 +31,11 @@ func (r *Repository) CheckRecipientParticipantForEvent(ctx context.Context, reci
 	return ans, nil
 }
 
-// GetPayersForRecipient receive list of payers who pay for recipient gift
-func (r *Repository) GetPayersForRecipient(ctx context.Context, recipientID int32, eventID int32) ([]db.GetPayersForRecipientRow, error) {
-	payers, err := r.query.GetPayersForRecipient(ctx, db.GetPayersForRecipientParams{
-		EventID: eventID,
-		ID:      recipientID,
-	})
-	if err != nil {
-		fmt.Println("repo err", err)
-		return nil, err
-	}
-	return payers, nil
-}
-
 // GetPayersInfoForRecipient receive list of payers info who pay for recipient gift
 func (r *Repository) GetPayersInfoForRecipient(ctx context.Context, recipientID int32, eventID int32) ([]db.GetPayersInfoForRecipientRow, error) {
 	payers, err := r.query.GetPayersInfoForRecipient(ctx, db.GetPayersInfoForRecipientParams{
-		EventID: eventID,
-		ID:      recipientID,
+		EventID:     eventID,
+		RecipientID: recipientID,
 	})
 	if err != nil {
 		fmt.Println("repo err", err)
@@ -60,7 +47,7 @@ func (r *Repository) GetPayersInfoForRecipient(ctx context.Context, recipientID 
 func (r *Repository) GetCurrentPayer(ctx context.Context, giftID int32, userID int64) (db.GetCurrentPayerInfoRow, error) {
 	payer, err := r.query.GetCurrentPayerInfo(ctx, db.GetCurrentPayerInfoParams{
 		ID:   giftID,
-		ID_2: int64(userID),
+		ID_2: userID,
 	})
 	if err != nil {
 		fmt.Println("repo err", err)

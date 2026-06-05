@@ -88,6 +88,7 @@ func (h *Handler) GetCurrentPayer(writer http.ResponseWriter, request *http.Requ
 		http.Error(writer, "failed to load current payer", http.StatusInternalServerError)
 		return
 	}
+	fmt.Println("current payer:", payer)
 
 	json.NewEncoder(writer).Encode(responses.ConvertPayerInfoToResponse(payer))
 }

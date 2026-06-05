@@ -168,7 +168,11 @@ func (r *Repository) FinalizeGiftStatusesOfEvent(ctx context.Context, eventId in
 	}
 
 	selectedGifts, err := qtx.GetSelectedGiftsOfEvent(ctx, eventId)
+
+	// for every gift and it's payer we need to create participant_gift link
 	for _, gift := range selectedGifts {
+
+
 		fmt.Println(gift.ContractAddress)
 	}
 	if err != nil {

@@ -21,12 +21,22 @@ values ($1, $2, $3,$4, $5,
         $6, $7, $8, $9, $10)
 returning *;
 
--- name: CreateParticipantGift :one
-insert into Participant_Gift (is_paid, amount,
-                              transaction_hash, participant_id, gift_id)
-values ($1, $2, $3, $4, $5)
-on conflict (transaction_hash) do nothing
-returning *;
+-- name: CreateParticipantGiftRecord :exec
+with p_id as (
+    select participants.id from participants
+                                    join users u on participants.user_id = u.id
+    where u.wallet_address = $2
+),
+     g_id as (
+         select gifts.id
+         from gifts
+         where gifts.contract_address = $1
+         limit 1
+     )
+insert into Participant_Gift (is_paid, amount, transaction_hash, participant_id, gift_id)
+select true, $3, $4, p_id.id, g_id.id
+from p_id, g_id
+on conflict (transaction_hash) do nothing;
 
 -- name: GetEventsInfoByUserID :many
 select
@@ -265,25 +275,38 @@ select exists(
 );
 
 
--- name: GetPayersForRecipient :many
-select p.id, u.first_name, u.last_name from participants p
-         join users u on p.user_id = u.id
-where event_id = $1 and role in ('contributor', 'participant') and p.id != $2;
-
 -- name: GetPayersInfoForRecipient :many
-select p.id, u.first_name, u.last_name, pg.is_paid, pg.amount from participants p
-                                        join users u on p.user_id = u.id
-                                        join participant_gift pg on p.id = pg.participant_id
-                                        join gifts g on pg.gift_id = g.id
-where p.event_id = $1 and role in ('contributor', 'participant') and p.id != $2 and g.recipient_id = $2;
+SELECT
+    p.id,
+    u.first_name,
+    u.last_name,
+    COALESCE(pg.is_paid, false) AS is_paid,
+    COALESCE(pg.amount, 0) AS amount
+FROM participants p
+         JOIN users u ON p.user_id = u.id
+         LEFT JOIN participant_gift pg
+                   ON p.id = pg.participant_id
+                       AND pg.gift_id IN (SELECT id FROM gifts WHERE recipient_id = $2)
+WHERE p.event_id = $1
+  AND p.role IN ('contributor', 'participant')
+  AND p.id != $2;
 
 -- name: GetCurrentPayerInfo :one
-select p.id, u.first_name, u.last_name, pg.is_paid, pg.amount from participants p
-                                                                       join users u on p.user_id = u.id
-                                                                       join participant_gift pg on p.id = pg.participant_id
-                                                                       join gifts g on pg.gift_id = g.id
-where g.id = $1 and u.id = $2
-limit 1;
+SELECT
+    p.id,
+    u.first_name,
+    u.last_name,
+    COALESCE(pg.is_paid, false) AS is_paid,
+    COALESCE(pg.amount, 0) AS amount
+FROM gifts g
+-- Находим ивент, к которому привязан подарок
+         JOIN participants p ON p.event_id = g.event_id
+-- Находим пользователя-плательщика
+         JOIN users u ON p.user_id = u.id
+-- Ищем его взнос
+         LEFT JOIN participant_gift pg ON p.id = pg.participant_id AND pg.gift_id = g.id
+WHERE g.id = $1 AND u.id = $2
+LIMIT 1;
 
 -- name: GetGiftForDeployment :one
 select g.id, g.target_amount, g.status, g.contract_address,

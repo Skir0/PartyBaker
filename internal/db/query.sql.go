@@ -258,39 +258,39 @@ func (q *Queries) CreateParticipant(ctx context.Context, arg CreateParticipantPa
 	return i, err
 }
 
-const createParticipantGift = `-- name: CreateParticipantGift :one
-insert into Participant_Gift (is_paid, amount,
-                              transaction_hash, participant_id, gift_id)
-values ($1, $2, $3, $4, $5)
+const createParticipantGiftRecord = `-- name: CreateParticipantGiftRecord :exec
+with p_id as (
+    select participants.id from participants
+                                    join users u on participants.user_id = u.id
+    where u.wallet_address = $2
+),
+     g_id as (
+         select gifts.id
+         from gifts
+         where gifts.contract_address = $1
+         limit 1
+     )
+insert into Participant_Gift (is_paid, amount, transaction_hash, participant_id, gift_id)
+select true, $3, $4, p_id.id, g_id.id
+from p_id, g_id
 on conflict (transaction_hash) do nothing
-returning is_paid, amount, transaction_hash, participant_id, gift_id
 `
 
-type CreateParticipantGiftParams struct {
-	IsPaid          pgtype.Bool
+type CreateParticipantGiftRecordParams struct {
+	ContractAddress pgtype.Text
+	WalletAddress   pgtype.Text
 	Amount          pgtype.Int8
 	TransactionHash pgtype.Text
-	ParticipantID   int32
-	GiftID          int32
 }
 
-func (q *Queries) CreateParticipantGift(ctx context.Context, arg CreateParticipantGiftParams) (ParticipantGift, error) {
-	row := q.db.QueryRow(ctx, createParticipantGift,
-		arg.IsPaid,
+func (q *Queries) CreateParticipantGiftRecord(ctx context.Context, arg CreateParticipantGiftRecordParams) error {
+	_, err := q.db.Exec(ctx, createParticipantGiftRecord,
+		arg.ContractAddress,
+		arg.WalletAddress,
 		arg.Amount,
 		arg.TransactionHash,
-		arg.ParticipantID,
-		arg.GiftID,
 	)
-	var i ParticipantGift
-	err := row.Scan(
-		&i.IsPaid,
-		&i.Amount,
-		&i.TransactionHash,
-		&i.ParticipantID,
-		&i.GiftID,
-	)
-	return i, err
+	return err
 }
 
 const createTransfer = `-- name: CreateTransfer :exec
@@ -535,12 +535,18 @@ func (q *Queries) GetAllParticipantsOfGift(ctx context.Context, giftID int32) ([
 }
 
 const getCurrentPayerInfo = `-- name: GetCurrentPayerInfo :one
-select p.id, u.first_name, u.last_name, pg.is_paid, pg.amount from participants p
-                                                                       join users u on p.user_id = u.id
-                                                                       join participant_gift pg on p.id = pg.participant_id
-                                                                       join gifts g on pg.gift_id = g.id
-where g.id = $1 and u.id = $2
-limit 1
+SELECT
+    p.id,
+    u.first_name,
+    u.last_name,
+    COALESCE(pg.is_paid, false) AS is_paid,
+    COALESCE(pg.amount, 0) AS amount
+FROM gifts g
+         JOIN participants p ON p.event_id = g.event_id
+         JOIN users u ON p.user_id = u.id
+         LEFT JOIN participant_gift pg ON p.id = pg.participant_id AND pg.gift_id = g.id
+WHERE g.id = $1 AND u.id = $2
+LIMIT 1
 `
 
 type GetCurrentPayerInfoParams struct {
@@ -552,10 +558,13 @@ type GetCurrentPayerInfoRow struct {
 	ID        int32
 	FirstName pgtype.Text
 	LastName  pgtype.Text
-	IsPaid    pgtype.Bool
-	Amount    pgtype.Int8
+	IsPaid    bool
+	Amount    int64
 }
 
+// Находим ивент, к которому привязан подарок
+// Находим пользователя-плательщика
+// Ищем его взнос
 func (q *Queries) GetCurrentPayerInfo(ctx context.Context, arg GetCurrentPayerInfoParams) (GetCurrentPayerInfoRow, error) {
 	row := q.db.QueryRow(ctx, getCurrentPayerInfo, arg.ID, arg.ID_2)
 	var i GetCurrentPayerInfoRow
@@ -850,66 +859,38 @@ func (q *Queries) GetGiftsInfoByRecipient(ctx context.Context, arg GetGiftsInfoB
 	return items, nil
 }
 
-const getPayersForRecipient = `-- name: GetPayersForRecipient :many
-select p.id, u.first_name, u.last_name from participants p
-         join users u on p.user_id = u.id
-where event_id = $1 and role in ('contributor', 'participant') and p.id != $2
-`
-
-type GetPayersForRecipientParams struct {
-	EventID int32
-	ID      int32
-}
-
-type GetPayersForRecipientRow struct {
-	ID        int32
-	FirstName pgtype.Text
-	LastName  pgtype.Text
-}
-
-func (q *Queries) GetPayersForRecipient(ctx context.Context, arg GetPayersForRecipientParams) ([]GetPayersForRecipientRow, error) {
-	rows, err := q.db.Query(ctx, getPayersForRecipient, arg.EventID, arg.ID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []GetPayersForRecipientRow
-	for rows.Next() {
-		var i GetPayersForRecipientRow
-		if err := rows.Scan(&i.ID, &i.FirstName, &i.LastName); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const getPayersInfoForRecipient = `-- name: GetPayersInfoForRecipient :many
-select p.id, u.first_name, u.last_name, pg.is_paid, pg.amount from participants p
-                                        join users u on p.user_id = u.id
-                                        join participant_gift pg on p.id = pg.participant_id
-                                        join gifts g on pg.gift_id = g.id
-where p.event_id = $1 and role in ('contributor', 'participant') and p.id != $2 and g.recipient_id = $2
+SELECT
+    p.id,
+    u.first_name,
+    u.last_name,
+    COALESCE(pg.is_paid, false) AS is_paid,
+    COALESCE(pg.amount, 0) AS amount
+FROM participants p
+         JOIN users u ON p.user_id = u.id
+         LEFT JOIN participant_gift pg
+                   ON p.id = pg.participant_id
+                       AND pg.gift_id IN (SELECT id FROM gifts WHERE recipient_id = $2)
+WHERE p.event_id = $1
+  AND p.role IN ('contributor', 'participant')
+  AND p.id != $2
 `
 
 type GetPayersInfoForRecipientParams struct {
-	EventID int32
-	ID      int32
+	EventID     int32
+	RecipientID int32
 }
 
 type GetPayersInfoForRecipientRow struct {
 	ID        int32
 	FirstName pgtype.Text
 	LastName  pgtype.Text
-	IsPaid    pgtype.Bool
-	Amount    pgtype.Int8
+	IsPaid    bool
+	Amount    int64
 }
 
 func (q *Queries) GetPayersInfoForRecipient(ctx context.Context, arg GetPayersInfoForRecipientParams) ([]GetPayersInfoForRecipientRow, error) {
-	rows, err := q.db.Query(ctx, getPayersInfoForRecipient, arg.EventID, arg.ID)
+	rows, err := q.db.Query(ctx, getPayersInfoForRecipient, arg.EventID, arg.RecipientID)
 	if err != nil {
 		return nil, err
 	}

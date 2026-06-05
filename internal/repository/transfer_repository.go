@@ -51,7 +51,7 @@ func (r *Repository) ProcessTransfer(ctx context.Context, contractAddress pgtype
 	fmt.Println("user address", userWallerAddress)
 	fmt.Println("contract address", contractAddress)
 
-	err = r.query.RecordTransfer(ctx, db.RecordTransferParams{
+	err = r.query.CreateParticipantGiftRecord(ctx, db.CreateParticipantGiftRecordParams{
 		ContractAddress: contractAddress,
 		WalletAddress:   userWallerAddress,
 		Amount:          transferAmount,

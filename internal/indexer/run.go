@@ -7,6 +7,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/xssnick/tonutils-go/address"
+	"github.com/xssnick/tonutils-go/tlb"
 	"github.com/xssnick/tonutils-go/ton"
 )
 
@@ -98,15 +99,48 @@ func (worker *Worker) Run(ctx context.Context) {
 					addr := address.NewAddress(0, byte(shard.Workchain), id.Account)
 
 					// todo also there are cases with canceled gift
-					if !(worker.activeGifts[addr.StringRaw()]) {
+					if !worker.activeGifts[addr.StringRaw()] {
+						log.Printf("address %s not in activeGifts cache, skipping", addr.StringRaw())
 						continue
 					}
 					fmt.Printf("!!! Найдена транзакция с активным подакром на наш контракт: %s\n", addr.StringRaw())
 					tx, err := worker.api.GetTransaction(ctx, shard, addr, id.LT)
-					fmt.Println("from gift jetton wallet address: ", tx.IO.In.AsInternal().SrcAddr)
-
 					if err != nil {
 						log.Println("get tx data err:", err.Error())
+						continue
+					}
+					// log src when available
+					if tx.IO.In != nil && tx.IO.In.MsgType == tlb.MsgTypeInternal {
+						fmt.Println("from gift jetton wallet address: ", tx.IO.In.AsInternal().SrcAddr)
+					} else {
+						fmt.Println("tx has no internal in-message or it's not internal")
+					}
+
+					// TODO
+
+					// desc, ok := tx.Description.(tlb.TransactionDescriptionOrdinary)
+					//if !ok {
+					//	fmt.Println("continue mode -- skip")
+					//	continue // Это не обычная транзакция (например, системная), пропускаем
+					//}
+					// 2. Проверяем фазу вычислений (Compute Phase)
+					// Если фазы нет или она была пропущена (skipped) - значит код не выполнялся
+					//if desc.ComputePhase.Phase == nil ||
+					//	desc.Aborted ||
+					//	desc.Destroyed {
+					//	fmt.Println("phase mode -- skip")
+					//	fmt.Println(desc.Aborted, desc.Destroyed)
+					//	continue
+					//}
+					err = worker.processTransaction(tx, ctx,
+						// maybe delete parameter
+						pgtype.Text{
+							String: addr.Bounce(true).Testnet(true).String(),
+							Valid:  true,
+						})
+
+					if err != nil {
+						fmt.Println("process tx err:", err.Error())
 						continue
 					}
 					// TODO

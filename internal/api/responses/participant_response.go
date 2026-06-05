@@ -41,8 +41,8 @@ func ConvertPayersInfoToResponses(payers []db.GetPayersInfoForRecipientRow) []Pa
 			Id:        payer.ID,
 			FirstName: payer.FirstName.String,
 			LastName:  payer.LastName.String,
-			IsPaid:    payer.IsPaid.Bool,
-			Amount:    int32(payer.Amount.Int64),
+			IsPaid:    payer.IsPaid,
+			Amount:    int32(payer.Amount),
 		}
 	}
 	return recipientResponses
@@ -53,8 +53,8 @@ func ConvertPayerInfoToResponse(payer db.GetCurrentPayerInfoRow) PayerResponse {
 		Id:        payer.ID,
 		FirstName: payer.FirstName.String,
 		LastName:  payer.LastName.String,
-		IsPaid:    payer.IsPaid.Bool,
-		Amount:    int32(payer.Amount.Int64),
+		IsPaid:    payer.IsPaid,
+		Amount:    int32(payer.Amount),
 	}
 	return payerResponse
 }
